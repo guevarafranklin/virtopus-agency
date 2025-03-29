@@ -52,6 +52,20 @@ export default function Create() {
                         />
                         <InputError message={errors.description} />
                     </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="title">Budget</Label>
+                        <Input
+                            id="budget"
+                            name="budget"
+                            ref={workName}
+                            value={data.budget}
+                            onChange={(e) => {
+                                setData('budget', e.target.value);
+                            }}
+                            className="mt-1 block w-full"
+                        />
+                        <InputError message={errors.budget} />
+                    </div>
                     <div className="flex items-center gap-4">
                         <Button disabled={processing}>Create Job</Button>
                     </div>
