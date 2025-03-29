@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRef } from 'react';
-import { Textarea } from '@headlessui/react';
+import { Textarea } from '@/components/ui/textarea';
 
 
 type CreateWorkForm = {
@@ -40,7 +40,7 @@ export default function Create() {
                         <InputError message={errors.title} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title">Description</Label>
                         <Textarea
                             id="description"
                             name="description"
@@ -48,6 +48,7 @@ export default function Create() {
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             className="mt-1 block w-full"
+                            placeholder="Type your description here..."
                         />
                         <InputError message={errors.description} />
                     </div>
