@@ -1,3 +1,4 @@
+
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
@@ -7,21 +8,23 @@ import { Label } from '@/components/ui/label';
 import { useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 
-
 type CreateWorkForm = {
     title: string;
     description: string;
     budget: number;
     duration: number;
 }
+
 export default function Create() {
     const workName = useRef<HTMLInputElement>(null);
-    const { data, setData, errors, post, reset, processing } = useForm<Required<CreateWorkForm>>({
+    const descriptionRef = useRef<HTMLTextAreaElement>(null);
+    const { data, setData, errors, processing } = useForm<Required<CreateWorkForm>>({
         title: '',
         description: '',
         budget: 0,
         duration: 0,
     });
+
     return (
         <AppLayout>
             <Head title="Create Job" />
@@ -40,11 +43,11 @@ export default function Create() {
                         <InputError message={errors.title} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Description</Label>
+                        <Label htmlFor="description">Description</Label>
                         <Textarea
                             id="description"
                             name="description"
-                            ref={workName}
+                            ref={descriptionRef}
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             className="mt-1 block w-full"
@@ -53,14 +56,14 @@ export default function Create() {
                         <InputError message={errors.description} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Budget</Label>
+                        <Label htmlFor="budget">Budget</Label>
                         <Input
                             id="budget"
                             name="budget"
                             ref={workName}
                             value={data.budget}
                             onChange={(e) => {
-                                setData('budget', e.target.value);
+                                setData('budget', Number(e.target.value));
                             }}
                             className="mt-1 block w-full"
                         />
@@ -74,3 +77,4 @@ export default function Create() {
         </AppLayout>
     );
 }
+```
