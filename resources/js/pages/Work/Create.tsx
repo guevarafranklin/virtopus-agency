@@ -1,4 +1,3 @@
-
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
@@ -77,4 +76,3 @@ export default function Create() {
         </AppLayout>
     );
 }
-```
