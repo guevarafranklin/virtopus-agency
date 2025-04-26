@@ -14,6 +14,15 @@ import { Button, buttonVariants } from '@/components/ui/button';
 
 
 export default function Index( { works }: { works: Work[] }) {
+
+  //helper funciton to limit texxt to the first 10 words
+    const limitText = (text: string) => {
+        const words = text.split(' ');
+        if (words.length > 10) {
+            return words.slice(0, 10).join(' ') + '...';
+        }
+        return text;
+    };
     const deleteWork = (id: number) => {
         if (confirm('Are you sure you want to delete this work?')) {
             router.delete(route('work.destroy', { id }));
@@ -42,7 +51,7 @@ export default function Index( { works }: { works: Work[] }) {
                         {works.map((work) => (
                             <TableRow key={work.id}>
                                 <TableCell>{work.title}</TableCell>
-                                <TableCell className="text-wrap">{work.description}</TableCell>
+                                <TableCell className="text-wrap">{limitText(work.description) }</TableCell>
                                 <TableCell className="text-right">{work.budget}</TableCell>
                                 <TableCell className="text-right">{work.duration}</TableCell>
                                 <TableCell className="text-right">{work.status}</TableCell>
