@@ -16,15 +16,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-        DB::table('users')->insert([
-            'name' => 'Franklin Guevara',
-            'email' => 'tecguevara@gmail.com',
-            'password' => bcrypt('Guevara16202'),
+        
+
+
+
+        $this->call([
+            WorkSeeder::class,
         ]);
-
-
-
-        Work::factory()->count(10)->create([]);
 
 
     }
