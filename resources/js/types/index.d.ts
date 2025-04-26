@@ -51,3 +51,13 @@ export interface Work {
     created_at: string;
     updated_at: string;
 }
+export interface Task {
+    id: number;
+    title: string;
+    description: string;
+    start_time: string;
+    end_time: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+}

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -27,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'client.work.update',
             'destroy' => 'client.work.destroy',
         ]);
+    });
+
+    Route::prefix('freelancer')->group(function () {
+        Route::resource('task', TaskController::class)->only(['store', 'index']);
     });
 
 });
