@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Table,
     TableBody,
@@ -15,8 +15,8 @@ export default function Index({ tasks }: { tasks: Task[] }) {
     // Helper function to limit text to the first 10 words
     const limitText = (text: string) => {
         const words = text.split(' ');
-        if (words.length > 10) {
-            return words.slice(0, 10).join(' ') + '...';
+        if (words.length > 5) {
+            return words.slice(0, 5).join(' ') + '...';
         }
         return text;
     };
@@ -25,7 +25,9 @@ export default function Index({ tasks }: { tasks: Task[] }) {
         <AppLayout>
             <Head title="Tasks" />
             <div className="mt-8">
-                <h1 className="text-2xl font-bold mb-4">Tasks</h1>
+            <Link className={buttonVariants({ variant: 'outline' })} href="/freelancer/task/create">
+                    Create Registration
+                </Link>
                 <Table className="mt-4">
                     <TableHeader>
                         <TableRow>
@@ -44,17 +46,23 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                 <TableCell className="text-right">{task.start_time}</TableCell>
                                 <TableCell className="text-right">{task.end_time}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2 text-right">
-                                    <Button
-                                        variant="outline"
+                                    <Link
+                                        href={route('freelancer.task.edit', { id: task.id })} // Ensure this route exists in your backend
                                         className={buttonVariants({ variant: 'outline' })}
-                                        onClick={() => alert(`Edit Task ${task.id}`)}
                                     >
                                         Edit
-                                    </Button>
+                                    </Link>
                                     <Button
                                         variant="destructive"
                                         className="cursor-pointer"
-                                        onClick={() => alert(`Delete Task ${task.id}`)}
+                                        onClick={() => {
+                                            if (confirm('Are you sure you want to delete this task?')) {
+                                                router.delete(route('freelancer.task.destroy', { id: task.id }), {
+                                                    onSuccess: () => alert('Task deleted successfully!'),
+                                                    onError: () => alert('Failed to delete the task.'),
+                                                });
+                                            }
+                                        }}
                                     >
                                         Delete
                                     </Button>

@@ -31,7 +31,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('freelancer')->group(function () {
-        Route::resource('task', TaskController::class)->only(['store', 'index']);
+        Route::resource('task', TaskController::class)->names([
+            'index' => 'freelancer.task.index',
+            'create' => 'freelancer.task.create',
+            'store' => 'freelancer.task.store',
+            'show' => 'freelancer.task.show',
+            'edit' => 'freelancer.task.edit',
+            'update' => 'freelancer.task.update',
+            'destroy' => 'freelancer.task.destroy',
+        ]);
     });
 
 });

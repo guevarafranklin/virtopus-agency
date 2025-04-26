@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
@@ -14,10 +15,8 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all(); // Fetch all tasks from the database
-
-        return Inertia::render('freelancer/Task/Index', [
-            'tasks' => $tasks,
+        return Inertia::render('freelancer/task/Index', [
+            'tasks' => Task::all(), // Fetch all tasks from the database
         ]);
     }
 
@@ -26,13 +25,13 @@ class TaskController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('freelancer/task/Create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTaskRequest $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -44,7 +43,7 @@ class TaskController extends Controller
 
         Task::create($validated + ['user_id' => auth()->id()]);
 
-        return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
+        return redirect()->route('freelancer.task.index')->with('success', 'Task created successfully.');
     }
 
     /**
@@ -60,7 +59,9 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
-        //
+        return Inertia::render('freelancer/Task/Edit', [
+            'task' => $task,
+        ]);
     }
 
     /**
@@ -86,6 +87,8 @@ class TaskController extends Controller
      */
     public function destroy(Task $task)
     {
-        //
+        $task->delete();
+
+        return redirect()->route('freelancer.task.index')->with('success', 'Task deleted successfully.');
     }
 }

@@ -11,7 +11,7 @@ class UpdateTaskRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'start_time' => ['nullable', 'date'],
+            'end_time' => ['nullable', 'date', 'after_or_equal:start_time'],
+            'status' => ['required', 'in:pending,in-progress,completed'],
+            'user_id' => ['required', 'exists:users,id'],
         ];
     }
 }
