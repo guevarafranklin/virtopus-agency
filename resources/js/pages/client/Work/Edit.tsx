@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-
 type EditWorkForm = {
+    id: number;
     title: string;
     description: string;
     budget: number;
@@ -17,18 +17,29 @@ type EditWorkForm = {
 };
 
 export default function Edit({ work }: { work: EditWorkForm }) {
+    if (!work) {
+        return (
+            <AppLayout>
+                <Head title="Edit Work" />
+                <div className="p-4">Work not found.</div>
+            </AppLayout>
+        );
+    }
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { data, setData, put, errors, processing } = useForm<Required<EditWorkForm>>({
-        title: work.title,
-        description: work.description,
-        budget: work.budget,
-        duration: work.duration,
-        skills: work.skills,
-        status: work.status,
+        id: work.id,
+        title: work.title || '',
+        description: work.description || '',
+        budget: work.budget || 0,
+        duration: work.duration || 0,
+        skills: work.skills || '',
+        status: work.status || 'open',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('client.work.update', { id: work.id })); // Ensure this matches your backend route name
+        put(route('client.work.update', { id: work.id }));
     };
 
     return (
@@ -65,7 +76,7 @@ export default function Edit({ work }: { work: EditWorkForm }) {
                             id="budget"
                             name="budget"
                             value={data.budget}
-                            onChange={(e) => setData('budget', Number(e.target.value))}
+                            onChange={(e) => setData('budget', Number(e.target.value) || 0)}
                             className="mt-1 block w-full"
                             type="number"
                         />
@@ -77,7 +88,7 @@ export default function Edit({ work }: { work: EditWorkForm }) {
                             id="duration"
                             name="duration"
                             value={data.duration}
-                            onChange={(e) => setData('duration', Number(e.target.value))}
+                            onChange={(e) => setData('duration', Number(e.target.value) || 0)}
                             className="mt-1 block w-full"
                             type="number"
                         />
