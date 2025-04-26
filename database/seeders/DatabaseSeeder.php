@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
             WorkSeeder::class,
         ]);
 
+        $this->call([
+            TaskSeeder::class,
+        ]);
+
 
     }
 }
