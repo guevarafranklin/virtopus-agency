@@ -33,7 +33,7 @@ export default function Index( { works }: { works: Work[] }) {
         <AppLayout>
             <Head title="Jobs" />
             <div className={'mt-8'}>
-                <Link className={buttonVariants({ variant: 'outline' })} href="/work/create">
+                <Link className={buttonVariants({ variant: 'outline' })} href="/client/work/create">
                     Create Job
                 </Link>
                 <Table className={'mt-4'}>
