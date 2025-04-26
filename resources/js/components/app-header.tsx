@@ -121,7 +121,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-56">
                                             <Link
-                                                href="/client/overview"
+                                                href="/client/work"
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             >
                                                 Post Jobs

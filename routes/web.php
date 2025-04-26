@@ -17,7 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('profile', ProfileController::class);
 
-    Route::resource('work', WorkController::class);
+    Route::prefix('client')->group(function () {
+        Route::resource('work', WorkController::class);
+    });
 });
 
 require __DIR__.'/settings.php';

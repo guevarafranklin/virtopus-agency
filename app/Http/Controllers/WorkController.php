@@ -14,7 +14,7 @@ class WorkController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Work/Index', [
+        return Inertia::render('client/Work/Index', [
             'works' => Work::all(),
         ]);
     }
@@ -24,7 +24,7 @@ class WorkController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Work/Create');
+        return Inertia::render('client/Work/Create');
     }
 
     /**
@@ -49,7 +49,7 @@ class WorkController extends Controller
      */
     public function edit(Work $work)
     {
-        return Inertia::render('Work/Edit', [
+        return Inertia::render('client/Work/Edit', [
             'work' => $work,
         ]);
     }
