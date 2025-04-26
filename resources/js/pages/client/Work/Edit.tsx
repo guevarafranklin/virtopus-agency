@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 
-type CreateWorkForm = {
+type EditWorkForm = {
     title: string;
     description: string;
     budget: number;
@@ -16,24 +16,24 @@ type CreateWorkForm = {
     status: string;
 };
 
-export default function Create() {
-    const { data, setData, post, errors, processing } = useForm<Required<CreateWorkForm>>({
-        title: '',
-        description: '',
-        budget: 0,
-        duration: 0,
-        skills: '',
-        status: 'open', // Default status
+export default function Edit({ work }: { work: EditWorkForm }) {
+    const { data, setData, put, errors, processing } = useForm<Required<EditWorkForm>>({
+        title: work.title,
+        description: work.description,
+        budget: work.budget,
+        duration: work.duration,
+        skills: work.skills,
+        status: work.status,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('client.work.store')); // Ensure this matches your backend route name
+        put(route('client.work.update', { id: work.id })); // Ensure this matches your backend route name
     };
 
     return (
         <AppLayout>
-            <Head title="Create Work" />
+            <Head title="Edit Work" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
@@ -111,7 +111,7 @@ export default function Create() {
                         <InputError message={errors.status} />
                     </div>
                     <div className="flex items-center gap-4">
-                        <Button disabled={processing}>Create Work</Button>
+                        <Button disabled={processing}>Save Changes</Button>
                     </div>
                 </form>
             </div>

@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router} from '@inertiajs/react';
-import { toast} from 'sonner';
+import { Head, Link, router } from '@inertiajs/react';
+import { toast } from 'sonner';
 import {
     Table,
     TableBody,
@@ -8,14 +8,12 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import { Work } from '@/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 
-
-export default function Index( { works }: { works: Work[] }) {
-
-  //helper funciton to limit texxt to the first 10 words
+export default function Index({ works }: { works: Work[] }) {
+    // Helper function to limit text to the first 10 words
     const limitText = (text: string) => {
         const words = text.split(' ');
         if (words.length > 10) {
@@ -23,12 +21,17 @@ export default function Index( { works }: { works: Work[] }) {
         }
         return text;
     };
+
+    // Delete action
     const deleteWork = (id: number) => {
         if (confirm('Are you sure you want to delete this work?')) {
-            router.delete(route('work.destroy', { id }));
-            toast.success('Task deleted successfully');
+            router.delete(route('client.work.destroy', { id }), {
+                onSuccess: () => toast.success('Job deleted successfully'),
+                onError: () => toast.error('Failed to delete the job'),
+            });
         }
-    }
+    };
+
     return (
         <AppLayout>
             <Head title="Jobs" />
@@ -51,18 +54,29 @@ export default function Index( { works }: { works: Work[] }) {
                         {works.map((work) => (
                             <TableRow key={work.id}>
                                 <TableCell>{work.title}</TableCell>
-                                <TableCell className="text-wrap">{limitText(work.description) }</TableCell>
+                                <TableCell className="text-wrap">{limitText(work.description)}</TableCell>
                                 <TableCell className="text-right">{work.budget}</TableCell>
                                 <TableCell className="text-right">{work.duration}</TableCell>
                                 <TableCell className="text-right">{work.status}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2 text-right">
-                                    <Button variant={'destructive'} className={'cursor-pointer'} onClick={() => deleteWork(work.id)}>
+                                    {/* Edit Action */}
+                                    <Link
+                                        href={route('client.work.edit', { id: work.id })}
+                                        className={buttonVariants({ variant: 'outline' })}
+                                    >
+                                        Edit
+                                    </Link>
+                                    {/* Delete Action */}
+                                    <Button
+                                        variant={'destructive'}
+                                        className={'cursor-pointer'}
+                                        onClick={() => deleteWork(work.id)}
+                                    >
                                         Delete
                                     </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
-
                     </TableBody>
                 </Table>
             </div>

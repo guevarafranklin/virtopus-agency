@@ -32,8 +32,18 @@ class WorkController extends Controller
      */
     public function store(StoreWorkRequest $request)
     {
-        Work::create($request->validated() + ['user_id' => auth()->id()]);
-        return redirect()->route('work.index')->with('success', 'Work created successfully.');
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'budget' => 'required|numeric|min:0',
+            'duration' => 'required|integer|min:1',
+            'skills' => 'required|string',
+            'status' => 'required|in:open,in-progress,closed',
+        ]);
+    
+        Work::create($validated + ['user_id' => auth()->id()]);
+    
+        return redirect()->route('client.work.index')->with('success', 'Work created successfully.');
     }
 
     /**
@@ -59,8 +69,18 @@ class WorkController extends Controller
      */
     public function update(UpdateWorkRequest $request, Work $work)
     {
-        $work->update($request->validated());
-        return redirect()->route('work.index')->with('success', 'Work updated successfully.');
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'budget' => 'required|numeric|min:0',
+            'duration' => 'required|integer|min:1',
+            'skills' => 'required|string',
+            'status' => 'required|in:open,in-progress,closed',
+        ]);
+    
+        $work->update($validated);
+    
+        return redirect()->route('client.work.index')->with('success', 'Work updated successfully.');
     }
 
     /**
@@ -69,6 +89,7 @@ class WorkController extends Controller
     public function destroy(Work $work)
     {
         $work->delete();
-        return redirect()->route('work.index')->with('success', 'Work deleted successfully.');
+        // Redirect to the correct route
+    return redirect()->route('client.work.index')->with('success', 'Work deleted successfully.');
     }
 }

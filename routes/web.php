@@ -18,8 +18,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('profile', ProfileController::class);
 
     Route::prefix('client')->group(function () {
-        Route::resource('work', WorkController::class);
+        Route::resource('work', WorkController::class)->names([
+            'index' => 'client.work.index',
+            'create' => 'client.work.create',
+            'store' => 'client.work.store',
+            'show' => 'client.work.show',
+            'edit' => 'client.work.edit',
+            'update' => 'client.work.update',
+            'destroy' => 'client.work.destroy',
+        ]);
     });
+
 });
 
 require __DIR__.'/settings.php';

@@ -24,9 +24,9 @@ class UpdateWorkRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'skills' => ['required', 'array'],
+            'skills' => ['required', 'string'],
             'budget' => ['required', 'numeric'],
-            'duration' => ['required', 'string'],
+            'duration' => ['required', 'integer'],
             'status' => ['required', 'string'],
         ];
     }
