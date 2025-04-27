@@ -28,6 +28,17 @@ export default function Create() {
         post(route('freelancer.task.store')); // Ensure this matches your backend route name
     };
 
+    const calculateDuration = (start: string, end: string) => {
+        const startTime = new Date(start);
+        const endTime = new Date(end);
+        const duration = endTime.getTime() - startTime.getTime();
+
+        const hours = Math.floor((duration % 86400000) / 3600000);
+        const minutes = Math.round(((duration % 86400000) % 3600000) / 60000);
+
+        return `${hours}h ${minutes}m`;
+    };
+
     return (
         <AppLayout>
             <Head title="Create Task" />
@@ -80,6 +91,16 @@ export default function Create() {
                             className="mt-1 block w-full"
                         />
                         <InputError message={errors.end_time} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="duration">Duration</Label>
+                        <Input
+                            id="duration"
+                            name="duration"
+                            value={data.start_time && data.end_time ? calculateDuration(data.start_time, data.end_time) : 'N/A'}
+                            className="mt-1 block w-full"
+                            readOnly
+                        />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="status">Status</Label>

@@ -57,6 +57,7 @@ export interface Task {
     description: string;
     start_time: string;
     end_time: string;
+    duration?: string; // Add the duration field
     status: string;
     created_at: string;
     updated_at: string;

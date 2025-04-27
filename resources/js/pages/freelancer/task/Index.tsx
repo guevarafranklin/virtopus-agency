@@ -35,6 +35,7 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                             <TableHead className="w-[200px]">Description</TableHead>
                             <TableHead className="w-[150px] text-right">Start Time</TableHead>
                             <TableHead className="w-[150px] text-right">End Time</TableHead>
+                            <TableHead className="w-[150px] text-right">Duration</TableHead>
                             <TableHead className="w-[150px] text-right">Status</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -45,6 +46,8 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                 <TableCell className="text-wrap">{limitText(task.description)}</TableCell>
                                 <TableCell className="text-right">{task.start_time}</TableCell>
                                 <TableCell className="text-right">{task.end_time}</TableCell>
+                                <TableCell>{task.duration || 'N/A'}</TableCell>
+                                <TableCell>{task.status}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2 text-right">
                                     <Link
                                         href={route('freelancer.task.edit', { id: task.id })} // Ensure this route exists in your backend

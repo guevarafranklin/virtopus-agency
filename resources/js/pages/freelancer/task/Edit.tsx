@@ -26,6 +26,14 @@ export default function Edit({ task }: { task: Task }) {
         put(route('freelancer.task.update', { id: task.id }));
     };
 
+    const calculateDuration = (start: string, end: string) => {
+        const startTime = new Date(start);
+        const endTime = new Date(end);
+        const diffMs = endTime.getTime() - startTime.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        return `${diffHours.toFixed(2)} hours`;
+    };
+
     return (
         <AppLayout>
             <Head title="Edit Task" />
@@ -67,6 +75,16 @@ export default function Edit({ task }: { task: Task }) {
                         onChange={(e) => setData('end_time', e.target.value)}
                     />
                     <InputError message={errors.end_time} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="duration">Duration</Label>
+                    <Input
+                        id="duration"
+                        name="duration"
+                        value={data.start_time && data.end_time ? calculateDuration(data.start_time, data.end_time) : 'N/A'}
+                        className="mt-1 block w-full"
+                        readOnly
+                    />
                 </div>
                 <Button type="submit" disabled={processing}>
                     Save Changes

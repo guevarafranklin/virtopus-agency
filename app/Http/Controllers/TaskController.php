@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
@@ -40,9 +41,20 @@ class TaskController extends Controller
             'end_time' => 'nullable|date|after_or_equal:start_time',
             'status' => 'required|in:pending,in-progress,completed',
         ]);
-
-        Task::create($validated + ['user_id' => auth()->id()]);
-
+    
+        // Calculate duration in minutes
+        $duration = null;
+        if ($request->start_time && $request->end_time) {
+            $start = Carbon::parse($request->start_time);
+            $end = Carbon::parse($request->end_time);
+            $duration = $end->diffInMinutes($start);
+        }
+    
+        Task::create($validated + [
+            'duration' => $duration,
+            'user_id' => auth()->id(),
+        ]);
+    
         return redirect()->route('freelancer.task.index')->with('success', 'Task created successfully.');
     }
 
@@ -76,10 +88,20 @@ class TaskController extends Controller
             'end_time' => 'nullable|date|after_or_equal:start_time',
             'status' => 'required|in:pending,in-progress,completed',
         ]);
-
-        $task->update($validated);
-
-        return redirect()->route('tasks.index')->with('success', 'Task updated successfully.');
+    
+        // Calculate duration in minutes
+        $duration = null;
+        if ($request->start_time && $request->end_time) {
+            $start = Carbon::parse($request->start_time);
+            $end = Carbon::parse($request->end_time);
+            $duration = $end->diffInMinutes($start);
+        }
+    
+        $task->update($validated + [
+            'duration' => $duration,
+        ]);
+    
+        return redirect()->route('freelancer.task.index')->with('success', 'Task updated successfully.');
     }
 
     /**
