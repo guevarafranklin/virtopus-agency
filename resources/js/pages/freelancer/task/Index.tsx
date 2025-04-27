@@ -35,14 +35,14 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                 <Table className="mt-4">
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead className="w-[200px]">Description</TableHead>
-                            <TableHead className="w-[150px] text-right">Start Time</TableHead>
-                            <TableHead className="w-[150px] text-right">End Time</TableHead>
-                            <TableHead className="w-[150px] text-right">Duration</TableHead>                            
-                            <TableHead className="w-[150px] text-right">Status</TableHead>
-                            <TableHead className="w-[150px] text-right">User</TableHead>
-                            <TableHead className="w-[150px] text-right">Actions</TableHead>
+                            <TableHead className="w-[200px] text-center">Title</TableHead>
+                            <TableHead className="w-[200px] text-center">Description</TableHead>
+                            <TableHead className="w-[150px] text-center">Start Time</TableHead>
+                            <TableHead className="w-[150px] text-center">End Time</TableHead>
+                            <TableHead className="w-[150px] text-center">Duration</TableHead>                            
+                            <TableHead className="w-[150px] text-center">Status</TableHead>
+                            <TableHead className="w-[150px] text-center">User</TableHead>
+                            <TableHead className="w-[150px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
