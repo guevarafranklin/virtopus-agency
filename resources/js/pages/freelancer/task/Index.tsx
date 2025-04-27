@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Task } from '@/types';
+import { format } from 'date-fns'; // Import date-fns for formatting
 
 export default function Index({ tasks }: { tasks: Task[] }) {
     // Helper function to limit text to the first 10 words
@@ -19,6 +20,9 @@ export default function Index({ tasks }: { tasks: Task[] }) {
             return words.slice(0, 5).join(' ') + '...';
         }
         return text;
+    };
+    const formatDateTime = (dateTime: string) => {
+        return dateTime ? format(new Date(dateTime), 'MM/dd/yyyy HH:mm') : 'N/A';
     };
 
     return (
@@ -43,10 +47,10 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                     <TableBody>
                         {tasks.map((task) => (
                             <TableRow key={task.id}>
-                                <TableCell>{task.title}</TableCell>
+                                <TableCell>{limitText(task.title)}</TableCell>
                                 <TableCell className="text-wrap">{limitText(task.description)}</TableCell>
-                                <TableCell className="text-right">{task.start_time}</TableCell>
-                                <TableCell className="text-right">{task.end_time}</TableCell>
+                                <TableCell className="text-right">{formatDateTime(task.start_time)}</TableCell>
+                                <TableCell className="text-right">{formatDateTime(task.end_time)}</TableCell>
                                 <TableCell>{task.duration || 'N/A'}</TableCell>
                                 <TableCell>{task.status}</TableCell>
                                 <TableCell>{task.duration || 'N/A'}</TableCell>
