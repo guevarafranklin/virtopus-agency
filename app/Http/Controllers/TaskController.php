@@ -17,7 +17,7 @@ class TaskController extends Controller
     public function index()
     {
         return Inertia::render('freelancer/task/Index', [
-            'tasks' => Task::all(), // Fetch all tasks from the database
+            'tasks' => Task::with('user')->get(), // Eager load the user relationship
         ]);
     }
 
