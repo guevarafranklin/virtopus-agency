@@ -4,17 +4,18 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, ...$roles)
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (count($roles) === 1 && strpos($roles[0], ',') !== false) {
+        if (count($roles) === 1 && str_contains($roles[0], ',')) {
             $roles = explode(',', $roles[0]);
         }
 
         if (!in_array($request->user()->role, $roles)) {
-            abort(403, 'Unauthorized');
+            abort(403, 'Unauthorized action.');
         }
 
         return $next($request);
