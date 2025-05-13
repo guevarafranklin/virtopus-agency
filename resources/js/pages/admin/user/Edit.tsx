@@ -4,125 +4,93 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { User } from '@/types';
+import { toast } from 'sonner';
 
-type EditWorkForm = {
-    id: number;
-    title: string;
-    description: string;
-    budget: number;
-    duration: number;
-    skills: string;
-    status: string;
+type EditUserForm = {
+    name: string;
+    email: string;
+    role: string;
 };
 
-export default function Edit({ work }: { work: EditWorkForm }) {
-    if (!work) {
-        return (
-            <AppLayout>
-                <Head title="Edit Work" />
-                <div className="p-4">Work not found.</div>
-            </AppLayout>
-        );
-    }
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { data, setData, put, errors, processing } = useForm<Required<EditWorkForm>>({
-        id: work.id,
-        title: work.title || '',
-        description: work.description || '',
-        budget: work.budget || 0,
-        duration: work.duration || 0,
-        skills: work.skills || '',
-        status: work.status || 'open',
+export default function Edit({ user }: { user: User }) {
+    const { data, setData, put, errors, processing } = useForm<EditUserForm>({
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'client',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('client.work.update', { id: work.id }));
+        put(route('admin.user.update', { id: user.id }));
+    };
+
+    const resetPassword = () => {
+        put(route('admin.user.resetPassword', { id: user.id }), {
+            onSuccess: () => toast.success('Password reset successfully'),
+            onError: () => toast.error('Failed to reset password'),
+        });
     };
 
     return (
         <AppLayout>
-            <Head title="Edit Work" />
+            <Head title="Edit User" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="name">Name</Label>
                         <Input
-                            id="title"
-                            name="title"
-                            value={data.title}
-                            onChange={(e) => setData('title', e.target.value)}
+                            id="name"
+                            name="name"
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
                             className="mt-1 block w-full"
+                            required
                         />
-                        <InputError message={errors.title} />
+                        <InputError message={errors.name} />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
-                            className="mt-1 block w-full"
-                            placeholder="Type your description here..."
-                        />
-                        <InputError message={errors.description} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="budget">Budget</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
-                            id="budget"
-                            name="budget"
-                            value={data.budget}
-                            onChange={(e) => setData('budget', Number(e.target.value) || 0)}
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
                             className="mt-1 block w-full"
-                            type="number"
+                            required
                         />
-                        <InputError message={errors.budget} />
+                        <InputError message={errors.email} />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="duration">Duration (in days)</Label>
-                        <Input
-                            id="duration"
-                            name="duration"
-                            value={data.duration}
-                            onChange={(e) => setData('duration', Number(e.target.value) || 0)}
-                            className="mt-1 block w-full"
-                            type="number"
-                        />
-                        <InputError message={errors.duration} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="skills">Skills</Label>
-                        <Input
-                            id="skills"
-                            name="skills"
-                            value={data.skills}
-                            onChange={(e) => setData('skills', e.target.value)}
-                            className="mt-1 block w-full"
-                            placeholder="Enter required skills (comma-separated)"
-                        />
-                        <InputError message={errors.skills} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="role">Role</Label>
                         <select
-                            id="status"
-                            name="status"
-                            value={data.status}
-                            onChange={(e) => setData('status', e.target.value)}
+                            id="role"
+                            name="role"
+                            value={data.role}
+                            onChange={(e) => setData('role', e.target.value)}
                             className="mt-1 block w-full border rounded-md p-2"
+                            required
                         >
-                            <option value="open">Open</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="closed">Closed</option>
+                            <option value="admin">Admin</option>
+                            <option value="client">Client</option>
+                            <option value="freelancer">Freelancer</option>
                         </select>
-                        <InputError message={errors.status} />
+                        <InputError message={errors.role} />
                     </div>
+
                     <div className="flex items-center gap-4">
-                        <Button disabled={processing}>Save Changes</Button>
+                        <Button type="submit" disabled={processing}>Save Changes</Button>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={resetPassword}
+                            disabled={processing}
+                        >
+                            Reset Password
+                        </Button>
                     </div>
                 </form>
             </div>

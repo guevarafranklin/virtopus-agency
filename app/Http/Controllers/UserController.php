@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -23,17 +24,18 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|string|in:admin,client,freelancer',
-        ]);
+       $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'role' => 'required|string|in:admin,client,freelancer',
+    ]);
 
-        User::create($validated);
+    $validated['password'] = Hash::make('P@sswordVirtopus!2025');
 
-        return redirect()->route('admin.user.index')
-            ->with('message', 'User created successfully');
+    User::create($validated);
+
+    return redirect()->route('admin.user.index')
+        ->with('message', 'User created successfully');
     }
 
     public function edit(User $user)
@@ -63,5 +65,17 @@ class UserController extends Controller
 
         return redirect()->route('admin.user.index')
             ->with('message', 'User deleted successfully');
+    }
+    public function resetPassword(User $user)
+    {
+        try {
+                $user->forceFill([
+                    'password' => Hash::make('P@sswordVirtopus!2025')
+                ])->save();
+
+                return redirect()->back()->with('success', 'Password reset successfully');
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Failed to reset password');
+            }
     }
 }

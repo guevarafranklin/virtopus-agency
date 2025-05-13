@@ -4,114 +4,82 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
-
-type CreateWorkForm = {
-    title: string;
-    description: string;
-    budget: number;
-    duration: number;
-    skills: string;
-    status: string;
+type CreateUserForm = {
+    name: string;
+    email: string;
+    role: string;
 };
 
 export default function Create() {
-    const { data, setData, post, errors, processing } = useForm<Required<CreateWorkForm>>({
-        title: '',
-        description: '',
-        budget: 0,
-        duration: 0,
-        skills: '',
-        status: 'open', // Default status
+    const { data, setData, post, errors, processing } = useForm<Required<CreateUserForm>>({
+        name: '',
+        email: '',
+        role: 'client', // Default role
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('client.work.store')); // Ensure this matches your backend route name
+        // The default password will be set on the backend
+        post(route('admin.user.store'));
     };
 
     return (
         <AppLayout>
-            <Head title="Create Work" />
+            <Head title="Create User" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="name">Name</Label>
                         <Input
-                            id="title"
-                            name="title"
-                            value={data.title}
-                            onChange={(e) => setData('title', e.target.value)}
+                            id="name"
+                            name="name"
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
                             className="mt-1 block w-full"
+                            required
                         />
-                        <InputError message={errors.title} />
+                        <InputError message={errors.name} />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
-                            className="mt-1 block w-full"
-                            placeholder="Type your description here..."
-                        />
-                        <InputError message={errors.description} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="budget">Budget</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
-                            id="budget"
-                            name="budget"
-                            value={data.budget}
-                            onChange={(e) => setData('budget', Number(e.target.value))}
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
                             className="mt-1 block w-full"
-                            type="number"
+                            required
                         />
-                        <InputError message={errors.budget} />
+                        <InputError message={errors.email} />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="duration">Duration (in days)</Label>
-                        <Input
-                            id="duration"
-                            name="duration"
-                            value={data.duration}
-                            onChange={(e) => setData('duration', Number(e.target.value))}
-                            className="mt-1 block w-full"
-                            type="number"
-                        />
-                        <InputError message={errors.duration} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="skills">Skills</Label>
-                        <Input
-                            id="skills"
-                            name="skills"
-                            value={data.skills}
-                            onChange={(e) => setData('skills', e.target.value)}
-                            className="mt-1 block w-full"
-                            placeholder="Enter required skills (comma-separated)"
-                        />
-                        <InputError message={errors.skills} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="role">Role</Label>
                         <select
-                            id="status"
-                            name="status"
-                            value={data.status}
-                            onChange={(e) => setData('status', e.target.value)}
+                            id="role"
+                            name="role"
+                            value={data.role}
+                            onChange={(e) => setData('role', e.target.value)}
                             className="mt-1 block w-full border rounded-md p-2"
+                            required
                         >
-                            <option value="open">Open</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="closed">Closed</option>
+                            <option value="admin">Admin</option>
+                            <option value="client">Client</option>
+                            <option value="freelancer">Freelancer</option>
                         </select>
-                        <InputError message={errors.status} />
+                        <InputError message={errors.role} />
                     </div>
+
                     <div className="flex items-center gap-4">
-                        <Button disabled={processing}>Create Work</Button>
+                        <Button type="submit" disabled={processing}>
+                            Create User
+                        </Button>
+                        <p className="text-sm text-gray-500">
+                            Default password will be set: P@sswordVirtopus!2025
+                        </p>
                     </div>
                 </form>
             </div>

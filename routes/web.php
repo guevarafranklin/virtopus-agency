@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         // Place admin-specific routes here
         Route::resource('user', UserController::class)->names([
+            'index' => 'admin.user.index',
             'create' => 'admin.user.create',
             'store' => 'admin.user.store',
             'show' => 'admin.user.show',
@@ -30,6 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'admin.user.update',
             'destroy' => 'admin.user.destroy',
         ]);
+        Route::put('/admin/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+            ->name('admin.user.resetPassword');
     });
 
     // Allow both admin and client to access client routes
