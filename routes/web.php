@@ -15,10 +15,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-
     Route::resource('profile', ProfileController::class);
 
-    Route::prefix('client')->group(function () {
+    // Admin-only routes (user management)
+    Route::middleware(['auth', 'role:admin'])->group(function () {
+        // Place admin-specific routes here
+    });
+
+    // Allow both admin and client to access client routes
+    Route::middleware(['auth', 'role:admin,client'])->prefix('client')->group(function () {
         Route::resource('work', WorkController::class)->names([
             'index' => 'client.work.index',
             'create' => 'client.work.create',
@@ -30,7 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     });
 
-    Route::prefix('freelancer')->group(function () {
+    // Allow both admin and freelancer to access freelancer routes
+    Route::middleware(['auth', 'role:admin,freelancer'])->prefix('freelancer')->group(function () {
         Route::resource('task', TaskController::class)->names([
             'index' => 'freelancer.task.index',
             'create' => 'freelancer.task.create',
