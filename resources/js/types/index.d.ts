@@ -45,12 +45,18 @@ export interface Work {
     id: number;
     title: string;
     description: string;
+    contract_type: 'hourly' | 'monthly';
+    rate: number;
+    job_start_date: string;
     budget: number;
     duration: number;
-    status: string;
+    skills: string;
+    status: 'active' | 'paused' | 'terminate';
+    weekly_time_limit: number;
     created_at: string;
     updated_at: string;
 }
+
 export interface Task {
     id: number;
     title: string;

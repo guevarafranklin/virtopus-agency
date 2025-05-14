@@ -35,15 +35,23 @@ class WorkController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
+            'contract_type' => 'required|in:hourly,monthly',
+            'rate' => 'required|numeric|min:0',
+            'job_start_date' => 'required|date|after:' . now()->addDays(14),
             'budget' => 'required|numeric|min:0',
-            'duration' => 'required|integer|min:1',
+            'duration' => 'required|string',
             'skills' => 'required|string',
-            'status' => 'required|in:open,in-progress,closed',
+            'status' => 'required|in:active,paused,terminate',
+            'weekly_time_limit' => 'required|integer|min:0',
         ]);
-    
+
+        // Convert skills string to JSON array
+        $validated['skills'] = json_encode(array_map('trim', explode(',', $validated['skills'])));
+        
         Work::create($validated + ['user_id' => auth()->id()]);
-    
-        return redirect()->route('client.work.index')->with('success', 'Work created successfully.');
+
+        return redirect()->route('client.work.index')
+            ->with('success', 'Work created successfully.');
     }
 
     /**
@@ -72,15 +80,23 @@ class WorkController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
+            'contract_type' => 'required|in:hourly,monthly',
+            'rate' => 'required|numeric|min:0',
+            'job_start_date' => 'required|date|after:' . now()->addDays(14),
             'budget' => 'required|numeric|min:0',
-            'duration' => 'required|integer|min:1',
+            'duration' => 'required|string',
             'skills' => 'required|string',
-            'status' => 'required|in:open,in-progress,closed',
+            'status' => 'required|in:active,paused,terminate',
+            'weekly_time_limit' => 'required|integer|min:0',
         ]);
-    
+
+        // Convert skills string to JSON array
+        $validated['skills'] = json_encode(array_map('trim', explode(',', $validated['skills'])));
+
         $work->update($validated);
-    
-        return redirect()->route('client.work.index')->with('success', 'Work updated successfully.');
+
+        return redirect()->route('client.work.index')
+            ->with('success', 'Work updated successfully');
     }
 
     /**

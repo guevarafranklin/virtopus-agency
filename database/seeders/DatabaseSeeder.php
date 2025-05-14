@@ -20,13 +20,13 @@ class DatabaseSeeder extends Seeder
 
 
 
-        $this->call([
+        /*$this->call([
             WorkSeeder::class,
         ]);
 
         $this->call([
             TaskSeeder::class,
-        ]);
+        ]); */
 
 
     }

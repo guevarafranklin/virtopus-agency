@@ -43,21 +43,31 @@ export default function Index({ works }: { works: Work[] }) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead className="w-[100px]">Description</TableHead>
-                            <TableHead className="w-[150px] text-right">Budget</TableHead>
-                            <TableHead className="w-[150px] text-right">Duration</TableHead>
-                            <TableHead className="w-[150px] text-right">Status</TableHead>
-                            <TableHead className="w-[150px] text-right">Actions</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Contract Type</TableHead>
+                            <TableHead className="text-right">Rate</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead className="text-right">Budget</TableHead>
+                            <TableHead className="text-right">Weekly Limit</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Skills</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {works.map((work) => (
                             <TableRow key={work.id}>
                                 <TableCell>{work.title}</TableCell>
-                                <TableCell className="text-wrap">{limitText(work.description)}</TableCell>
-                                <TableCell className="text-right">{work.budget}</TableCell>
-                                <TableCell className="text-right">{work.duration}</TableCell>
-                                <TableCell className="text-right">{work.status}</TableCell>
+                                <TableCell>{limitText(work.description)}</TableCell>
+                                <TableCell>{work.contract_type}</TableCell>
+                                <TableCell className="text-right">
+                                    ${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'}
+                                </TableCell>
+                                <TableCell>{new Date(work.job_start_date).toLocaleDateString()}</TableCell>
+                                <TableCell className="text-right">${work.budget}</TableCell>
+                                <TableCell className="text-right">{work.weekly_time_limit}h</TableCell>
+                                <TableCell>{work.status}</TableCell>
+                                <TableCell>{Array.isArray(work.skills) ? work.skills.join(', ') : work.skills}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2 text-right">
                                     {/* Edit Action */}
                                     <Link

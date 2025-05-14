@@ -10,18 +10,23 @@ class Work extends Model
     /** @use HasFactory<\Database\Factories\WorkFactory> */
     use HasFactory;
     protected $fillable = [
+        'user_id',
         'title',
         'description',
-        'skills',
+        'contract_type',
+        'rate',
+        'job_start_date',
         'budget',
         'duration',
+        'skills',
         'status',
-        'user_id',
+        'weekly_time_limit',
     ];
-    protected function casts(): array
-    {
-        return [
-            'skills' => 'array',
-        ];
-    }
+
+    protected $casts = [
+        'skills' => 'array',
+        'job_start_date' => 'datetime',
+        'rate' => 'decimal:2',
+        'budget' => 'decimal:2',
+    ];
 }
