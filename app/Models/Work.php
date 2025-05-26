@@ -16,7 +16,6 @@ class Work extends Model
         'contract_type',
         'rate',
         'job_start_date',
-        'budget',
         'duration',
         'skills',
         'status',

@@ -48,7 +48,7 @@ export interface Work {
     contract_type: 'hourly' | 'monthly';
     rate: number;
     job_start_date: string;
-    duration: number;
+    duration: string; // Changed from number to string
     skills: string;
     status: 'active' | 'paused' | 'terminate';
     weekly_time_limit: number;
