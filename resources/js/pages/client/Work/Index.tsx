@@ -47,7 +47,6 @@ export default function Index({ works }: { works: Work[] }) {
                             <TableHead>Contract Type</TableHead>
                             <TableHead className="text-right">Rate</TableHead>
                             <TableHead>Start Date</TableHead>
-                            <TableHead className="text-right">Budget</TableHead>
                             <TableHead className="text-right">Weekly Limit</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Skills</TableHead>
@@ -64,7 +63,6 @@ export default function Index({ works }: { works: Work[] }) {
                                     ${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'}
                                 </TableCell>
                                 <TableCell>{new Date(work.job_start_date).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">${work.budget}</TableCell>
                                 <TableCell className="text-right">{work.weekly_time_limit}h</TableCell>
                                 <TableCell>{work.status}</TableCell>
                                 <TableCell>{Array.isArray(work.skills) ? work.skills.join(', ') : work.skills}</TableCell>

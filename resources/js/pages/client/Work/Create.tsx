@@ -13,7 +13,6 @@ type CreateWorkForm = {
     contract_type: 'hourly' | 'monthly';
     rate: number;
     job_start_date: string;
-    budget: number;
     duration: string; // Changed from number to string
     skills: string;
     status: 'active' | 'paused' | 'terminate';
@@ -27,7 +26,6 @@ export default function Create() {
         contract_type: 'hourly',
         rate: 0,
         job_start_date: '',
-        budget: 0,
         duration: '', // Changed from 0 to empty string
         skills: '',
         status: 'active',
@@ -105,18 +103,6 @@ export default function Create() {
                             className="mt-1 block w-full"
                         />
                         <InputError message={errors.job_start_date} />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="budget">Budget</Label>
-                        <Input
-                            id="budget"
-                            name="budget"
-                            value={data.budget}
-                            onChange={(e) => setData('budget', Number(e.target.value))}
-                            className="mt-1 block w-full"
-                            type="number"
-                        />
-                        <InputError message={errors.budget} />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="duration">Duration (in days)</Label>
