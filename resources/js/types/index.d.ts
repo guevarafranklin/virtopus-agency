@@ -62,8 +62,12 @@ export interface Task {
     description: string;
     start_time: string;
     end_time: string;
-    duration?: string;
+    duration?: number;
     status: string;
+    contract_id?: number;
+    is_billable: boolean;
+    billable_hours?: number;
+    contract?: Contract;
     user?: {
         id: number;
         name: string;

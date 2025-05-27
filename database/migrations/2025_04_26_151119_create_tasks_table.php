@@ -19,6 +19,9 @@ return new class extends Migration
             $table->timestamp('end_time')->nullable(); // Finalization time
             $table->enum('status', ['pending', 'in-progress', 'completed'])->default('pending'); // Task status
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // User who created the task
+            $table->foreignId('contract_id')->nullable()->constrained('contracts')->onDelete('cascade');
+            $table->boolean('is_billable')->default(false);
+            $table->decimal('billable_hours', 8, 2)->nullable(); // Hours worked on this task
             $table->timestamps(); // Created at and updated at
         });
     }
@@ -28,6 +31,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tasks');
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->dropForeign(['contract_id']);
+            $table->dropColumn(['contract_id', 'is_billable', 'billable_hours']);
+        });
     }
 };

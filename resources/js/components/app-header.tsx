@@ -197,10 +197,16 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                 Manage Users
                                             </Link>
                                             <Link
+                                                href={route('admin.payroll.index')}
+                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                            >
+                                                Payroll
+                                            </Link>
+                                            <Link
                                                 href="/admin/settings"
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             >
-                                                Contracts
+                                                Settings
                                             </Link>
                                         </DropdownMenuContent>
                                     </DropdownMenu>

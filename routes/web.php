@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\Admin\PayrollController;
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -78,6 +79,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'update' => 'admin.contract.update',
         'destroy' => 'admin.contract.destroy',
     ]);
+
+    // Payroll routes
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
+    Route::get('/payroll/contract/{contract}', [PayrollController::class, 'show'])->name('admin.payroll.show');
 });
 
 });
