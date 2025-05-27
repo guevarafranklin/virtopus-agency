@@ -81,3 +81,14 @@ export interface User {
     created_at: string;
     updated_at: string;
 }
+
+export interface Contract {
+    id: number;
+    agency_rate: number;
+    work_id: number;
+    user_id: number;
+    work: Work;
+    user: User;
+    created_at: string;
+    updated_at: string;
+}

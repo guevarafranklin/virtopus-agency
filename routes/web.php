@@ -4,6 +4,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\ContractController;
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -59,7 +60,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'freelancer.task.update',
             'destroy' => 'freelancer.task.destroy',
         ]);
+
+        // Freelancer contract routes (read-only)
+        Route::get('/contracts', [ContractController::class, 'freelancerIndex'])->name('freelancer.contract.index');
+        Route::get('/contracts/{contract}', [ContractController::class, 'freelancerShow'])->name('freelancer.contract.show');
     });
+
+    Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    // ...existing routes...
+    
+    Route::resource('contract', ContractController::class)->names([
+        'index' => 'admin.contract.index',
+        'create' => 'admin.contract.create',
+        'store' => 'admin.contract.store',
+        'show' => 'admin.contract.show',
+        'edit' => 'admin.contract.edit',
+        'update' => 'admin.contract.update',
+        'destroy' => 'admin.contract.destroy',
+    ]);
+});
 
 });
 

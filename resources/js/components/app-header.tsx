@@ -159,10 +159,10 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                 Tasks
                                             </Link>
                                             <Link
-                                                href="/freelancer/overview"
+                                                href={route('freelancer.contract.index')}
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             >
-                                                My Work
+                                                My Contracts 
                                             </Link>
                                             <Link
                                                 href="/freelancer/tasks"
@@ -185,10 +185,10 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-56">
                                             <Link
-                                                href="/admin/overview"
+                                                href="/admin/contract"
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             >
-                                                Timesheets
+                                                Contracts 
                                             </Link>
                                             <Link
                                                 href="/admin/user"

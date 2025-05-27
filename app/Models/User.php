@@ -21,7 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // Added role attribute
+        'role',
     ];
 
     /**
@@ -45,5 +45,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the works for the user.
+     */
+    public function works()
+    {
+        return $this->hasMany(Work::class);
+    }
+
+    /**
+     * Get the contracts for the user.
+     */
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class);
     }
 }

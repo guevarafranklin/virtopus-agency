@@ -9,6 +9,7 @@ class Work extends Model
 {
     /** @use HasFactory<\Database\Factories\WorkFactory> */
     use HasFactory;
+    
     protected $fillable = [
         'user_id',
         'title',
@@ -26,6 +27,21 @@ class Work extends Model
         'skills' => 'array',
         'job_start_date' => 'datetime',
         'rate' => 'decimal:2',
-        'budget' => 'decimal:2',
     ];
+
+    /**
+     * Get the user that owns the work.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the contracts for the work.
+     */
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class);
+    }
 }
