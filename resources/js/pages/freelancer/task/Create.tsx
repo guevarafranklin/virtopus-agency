@@ -68,13 +68,14 @@ export default function Create({ contracts }: Props) {
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title">Task</Label>
                         <Input
                             id="title"
                             name="title"
                             value={data.title}
                             onChange={(e) => setData('title', e.target.value)}
                             className="mt-1 block w-full"
+                            placeholder="Enter task name"
                             required
                         />
                         <InputError message={errors.title} />
@@ -88,7 +89,7 @@ export default function Create({ contracts }: Props) {
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             className="mt-1 block w-full"
-                            placeholder="Type your description here..."
+                            placeholder="Describe the task details..."
                         />
                         <InputError message={errors.description} />
                     </div>
