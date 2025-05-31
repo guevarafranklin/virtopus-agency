@@ -14,8 +14,23 @@ class WorkController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        
+        // Admin can see all works, clients only see their own
+        if ($user->role === 'admin') {
+            $works = Work::with('user')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            // Clients only see works they created
+            $works = Work::where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
         return Inertia::render('client/Work/Index', [
-            'works' => Work::all(),
+            'works' => $works,
+            'isAdmin' => $user->role === 'admin'
         ]);
     }
 
@@ -66,6 +81,13 @@ class WorkController extends Controller
      */
     public function edit(Work $work)
     {
+        $user = auth()->user();
+        
+        // Admin can edit any work, clients can only edit their own
+        if ($user->role !== 'admin' && $work->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         return Inertia::render('client/Work/Edit', [
             'work' => $work,
         ]);
@@ -76,6 +98,13 @@ class WorkController extends Controller
      */
     public function update(UpdateWorkRequest $request, Work $work)
     {
+        $user = auth()->user();
+        
+        // Admin can update any work, clients can only update their own
+        if ($user->role !== 'admin' && $work->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -102,8 +131,16 @@ class WorkController extends Controller
      */
     public function destroy(Work $work)
     {
+        $user = auth()->user();
+        
+        // Admin can delete any work, clients can only delete their own
+        if ($user->role !== 'admin' && $work->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $work->delete();
-        // Redirect to the correct route
-    return redirect()->route('client.work.index')->with('success', 'Work deleted successfully.');
+        
+        return redirect()->route('client.work.index')
+            ->with('success', 'Work deleted successfully.');
     }
 }

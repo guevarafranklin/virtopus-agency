@@ -12,7 +12,12 @@ import {
 import { Work } from '@/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 
-export default function Index({ works }: { works: Work[] }) {
+interface Props {
+    works: Work[];
+    isAdmin?: boolean;
+}
+
+export default function Index({ works, isAdmin = false }: Props) {
     // Helper function to limit text to the first 10 words
     const limitText = (text: string) => {
         const words = text.split(' ');
@@ -34,16 +39,20 @@ export default function Index({ works }: { works: Work[] }) {
 
     return (
         <AppLayout>
-            <Head title="Jobs" />
+            <Head title={isAdmin ? "All Jobs" : "My Jobs"} />
             <div className={'mt-8'}>
-                <Link className={buttonVariants({ variant: 'outline' })} href="/client/work/create">
-                    Create Job
-                </Link>
+                {!isAdmin && (
+                    <Link className={buttonVariants({ variant: 'outline' })} href="/client/work/create">
+                        Create Job
+                    </Link>
+                )}
+                
                 <Table className={'mt-4'}>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
                             <TableHead>Description</TableHead>
+                            {isAdmin && <TableHead>Client</TableHead>}
                             <TableHead>Contract Type</TableHead>
                             <TableHead className="text-right">Rate</TableHead>
                             <TableHead>Start Date</TableHead>
@@ -58,23 +67,34 @@ export default function Index({ works }: { works: Work[] }) {
                             <TableRow key={work.id}>
                                 <TableCell>{work.title}</TableCell>
                                 <TableCell>{limitText(work.description)}</TableCell>
-                                <TableCell>{work.contract_type}</TableCell>
+                                {isAdmin && (
+                                    <TableCell>
+                                        {work.user ? work.user.name : 'N/A'}
+                                    </TableCell>
+                                )}
+                                <TableCell className="capitalize">{work.contract_type}</TableCell>
                                 <TableCell className="text-right">
                                     ${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'}
                                 </TableCell>
                                 <TableCell>{new Date(work.job_start_date).toLocaleDateString()}</TableCell>
                                 <TableCell className="text-right">{work.weekly_time_limit}h</TableCell>
-                                <TableCell>{work.status}</TableCell>
+                                <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                        work.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        work.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
+                                    }`}>
+                                        {work.status}
+                                    </span>
+                                </TableCell>
                                 <TableCell>{Array.isArray(work.skills) ? work.skills.join(', ') : work.skills}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2 text-right">
-                                    {/* Edit Action */}
                                     <Link
                                         href={route('client.work.edit', { id: work.id })}
                                         className={buttonVariants({ variant: 'outline' })}
                                     >
                                         Edit
                                     </Link>
-                                    {/* Delete Action */}
                                     <Button
                                         variant={'destructive'}
                                         className={'cursor-pointer'}
@@ -87,6 +107,24 @@ export default function Index({ works }: { works: Work[] }) {
                         ))}
                     </TableBody>
                 </Table>
+                
+                {works.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                        {isAdmin ? (
+                            <p>No job posts found in the system.</p>
+                        ) : (
+                            <>
+                                <p>You haven't created any job posts yet.</p>
+                                <Link 
+                                    href="/client/work/create"
+                                    className={buttonVariants({ variant: 'default', className: 'mt-4' })}
+                                >
+                                    Create Your First Job
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

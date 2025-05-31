@@ -48,10 +48,17 @@ export interface Work {
     contract_type: 'hourly' | 'monthly';
     rate: number;
     job_start_date: string;
-    duration: string; // Changed from number to string
+    duration: string;
     skills: string;
     status: 'active' | 'paused' | 'terminate';
     weekly_time_limit: number;
+    user_id: number;
+    user?: {
+        id: number;
+        name: string;
+        email: string;
+        role: string;
+    };
     created_at: string;
     updated_at: string;
 }
