@@ -127,6 +127,9 @@ export default function Index({ contracts, freelancers, filters }: Props) {
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                 />
+                                <p className="text-xs text-gray-500">
+                                    Displays as MM/DD/YYYY
+                                </p>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="end_date">End Date</Label>
@@ -136,6 +139,9 @@ export default function Index({ contracts, freelancers, filters }: Props) {
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                 />
+                                <p className="text-xs text-gray-500">
+                                    Displays as MM/DD/YYYY
+                                </p>
                             </div>
                             <Button type="submit">Filter</Button>
                             <Button type="button" variant="outline" onClick={clearFilters}>

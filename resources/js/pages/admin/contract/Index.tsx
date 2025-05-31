@@ -11,11 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Contract } from '@/types';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { formatDateUS } from '@/lib/date-utils';
 
 export default function Index({ contracts }: { contracts: Contract[] }) {
-    // Helper function to limit text to the first 10 words
-    
-
     // Delete action
     const deleteContract = (id: number) => {
         if (confirm('Are you sure you want to delete this contract?')) {
@@ -58,7 +56,7 @@ export default function Index({ contracts }: { contracts: Contract[] }) {
                                 </TableCell>
                                 <TableCell>{contract.work.status}</TableCell>
                                 <TableCell className="text-right">
-                                    {new Date(contract.created_at).toLocaleDateString()}
+                                    {formatDateUS(contract.created_at)}
                                 </TableCell>
                                 <TableCell className="flex flex-row gap-x-2 justify-end">
                                     <Link

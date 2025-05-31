@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { User } from '@/types'; // Make sure to create this type
 import { Button, buttonVariants } from '@/components/ui/button';
+import { formatDateUS } from '@/lib/date-utils';
 
 export default function Index({ users }: { users: User[] }) {
     // Delete action
@@ -25,7 +26,7 @@ export default function Index({ users }: { users: User[] }) {
 
     return (
         <AppLayout>
-            <Head title="Users Management" />
+            <Head title="Users" />
             <div className={'mt-8'}>
                 <Link className={buttonVariants({ variant: 'outline' })} href={route('admin.user.create')}>
                     Create User
@@ -47,7 +48,7 @@ export default function Index({ users }: { users: User[] }) {
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.role}</TableCell>
                                 <TableCell className="text-right">
-                                    {new Date(user.created_at).toLocaleDateString()}
+                                    {formatDateUS(user.created_at)}
                                 </TableCell>
                                 <TableCell className="flex flex-row gap-x-2 justify-end">
                                     <Link

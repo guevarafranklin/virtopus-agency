@@ -143,6 +143,9 @@ export default function Create({ contracts }: Props) {
                             className="mt-1 block w-full"
                             required
                         />
+                        <p className="text-sm text-gray-500">
+                            Time will display in US format (MM/DD/YYYY, 12-hour clock)
+                        </p>
                         <InputError message={errors.start_time} />
                     </div>
 
@@ -157,6 +160,9 @@ export default function Create({ contracts }: Props) {
                             className="mt-1 block w-full"
                             required
                         />
+                        <p className="text-sm text-gray-500">
+                            Time will display in US format (MM/DD/YYYY, 12-hour clock)
+                        </p>
                         <InputError message={errors.end_time} />
                     </div>
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
+import { toISODateTime } from '@/lib/date-utils';
 
 interface Task {
     id: number;
@@ -17,8 +18,8 @@ export default function Edit({ task }: { task: Task }) {
     const { data, setData, put, errors, processing } = useForm({
         title: task.title,
         description: task.description,
-        start_time: task.start_time,
-        end_time: task.end_time,
+        start_time: toISODateTime(task.start_time),
+        end_time: toISODateTime(task.end_time),
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -27,6 +28,7 @@ export default function Edit({ task }: { task: Task }) {
     };
 
     const calculateDuration = (start: string, end: string) => {
+        if (!start || !end) return 'N/A';
         const startTime = new Date(start);
         const endTime = new Date(end);
         const diffMs = endTime.getTime() - startTime.getTime();
@@ -64,6 +66,9 @@ export default function Edit({ task }: { task: Task }) {
                         value={data.start_time}
                         onChange={(e) => setData('start_time', e.target.value)}
                     />
+                    <p className="text-sm text-gray-500">
+                        Time will display in US format (MM/DD/YYYY, 12-hour clock)
+                    </p>
                     <InputError message={errors.start_time} />
                 </div>
                 <div>
@@ -74,6 +79,9 @@ export default function Edit({ task }: { task: Task }) {
                         value={data.end_time}
                         onChange={(e) => setData('end_time', e.target.value)}
                     />
+                    <p className="text-sm text-gray-500">
+                        Time will display in US format (MM/DD/YYYY, 12-hour clock)
+                    </p>
                     <InputError message={errors.end_time} />
                 </div>
                 <div className="grid gap-2">

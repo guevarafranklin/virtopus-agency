@@ -11,6 +11,7 @@ import {
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Contract, Task } from '@/types';
+import { formatDateTimeUS } from '@/lib/date-utils';
 
 interface Props {
     contract: Contract;
@@ -31,11 +32,6 @@ interface Props {
 }
 
 export default function Show({ contract, tasks, summary, filters }: Props) {
-    const formatDateTime = (dateTime: string) => {
-        return new Date(dateTime).toLocaleString();
-    };
-
-
     return (
         <AppLayout>
             <Head title={`Payroll - ${contract.work.title}`} />
@@ -125,8 +121,8 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                                         <TableRow key={task.id}>
                                             <TableCell>{task.title}</TableCell>
                                             <TableCell>{task.description || 'N/A'}</TableCell>
-                                            <TableCell>{formatDateTime(task.start_time)}</TableCell>
-                                            <TableCell>{formatDateTime(task.end_time)}</TableCell>
+                                            <TableCell>{formatDateTimeUS(task.start_time)}</TableCell>
+                                            <TableCell>{formatDateTimeUS(task.end_time)}</TableCell>
                                             <TableCell className="text-right">{task.billable_hours}h</TableCell>
                                             <TableCell>
                                                 <span className={`px-2 py-1 rounded-full text-xs ${

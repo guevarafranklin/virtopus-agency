@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Contract } from '@/types';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDateUS } from '@/lib/date-utils';
 
 interface Props {
     contract: Contract;
@@ -51,7 +52,7 @@ export default function Show({ contract }: Props) {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-600">Start Date</label>
-                                <p>{new Date(contract.work.job_start_date).toLocaleDateString()}</p>
+                                <p>{formatDateUS(contract.work.job_start_date)}</p>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-600">Weekly Time Limit</label>

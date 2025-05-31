@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { getMinDateForWork } from '@/lib/date-utils';
 
 
 type CreateWorkForm = {
@@ -26,7 +27,7 @@ export default function Create() {
         contract_type: 'hourly',
         rate: 0,
         job_start_date: '',
-        duration: '', // Changed from 0 to empty string
+        duration: '',
         skills: '',
         status: 'active',
         weekly_time_limit: 0,
@@ -34,7 +35,7 @@ export default function Create() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('client.work.store')); // Ensure this matches your backend route name
+        post(route('client.work.store'));
     };
 
     return (
@@ -92,16 +93,20 @@ export default function Create() {
                         <InputError message={errors.rate} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="job_start_date">Start Date</Label>
+                        <Label htmlFor="job_start_date">Job Start Date</Label>
                         <Input
                             id="job_start_date"
                             name="job_start_date"
                             type="date"
-                            min={new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                            min={getMinDateForWork()}
                             value={data.job_start_date}
                             onChange={(e) => setData('job_start_date', e.target.value)}
                             className="mt-1 block w-full"
+                            required
                         />
+                        <p className="text-sm text-gray-500">
+                            Job must start at least 15 days from today (US format: MM/DD/YYYY)
+                        </p>
                         <InputError message={errors.job_start_date} />
                     </div>
                     <div className="grid gap-2">

@@ -10,6 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Contract } from '@/types';
+import { formatDateUS } from '@/lib/date-utils';
 
 export default function Index({ contracts }: { contracts: Contract[] }) {
     // Calculate freelancer rate (work rate minus agency percentage)
@@ -58,10 +59,10 @@ export default function Index({ contracts }: { contracts: Contract[] }) {
                                             {contract.work.status}
                                         </span>
                                     </TableCell>
-                                    <TableCell>{new Date(contract.work.job_start_date).toLocaleDateString()}</TableCell>
+                                    <TableCell>{formatDateUS(contract.work.job_start_date)}</TableCell>
                                     <TableCell className="text-right">{contract.work.weekly_time_limit}h</TableCell>
                                     <TableCell className="text-right">
-                                        {new Date(contract.created_at).toLocaleDateString()}
+                                        {formatDateUS(contract.created_at)}
                                     </TableCell>
                                     
                                 </TableRow>

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Task } from '@/types';
-import { format } from 'date-fns';
+import { formatDateTimeUS } from '@/lib/date-utils';
 
 export default function Index({ tasks }: { tasks: Task[] }) {
     const limitText = (text: string) => {
@@ -19,10 +19,6 @@ export default function Index({ tasks }: { tasks: Task[] }) {
             return words.slice(0, 5).join(' ') + '...';
         }
         return text;
-    };
-
-    const formatDateTime = (dateTime: string) => {
-        return dateTime ? format(new Date(dateTime), 'MM/dd/yyyy HH:mm') : 'N/A';
     };
 
     return (
@@ -74,8 +70,8 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                 <TableCell>
                                     {task.billable_hours ? `${task.billable_hours}h` : 'N/A'}
                                 </TableCell>
-                                <TableCell>{formatDateTime(task.start_time)}</TableCell>
-                                <TableCell>{formatDateTime(task.end_time)}</TableCell>
+                                <TableCell>{formatDateTimeUS(task.start_time)}</TableCell>
+                                <TableCell>{formatDateTimeUS(task.end_time)}</TableCell>
                                 <TableCell>{task.status}</TableCell>
                                 <TableCell className="flex flex-row gap-x-2">
                                     <Link

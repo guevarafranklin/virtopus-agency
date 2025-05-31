@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Work } from '@/types';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { formatDateUS } from '@/lib/date-utils';
 
 interface Props {
     works: Work[];
@@ -76,7 +77,7 @@ export default function Index({ works, isAdmin = false }: Props) {
                                 <TableCell className="text-right">
                                     ${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'}
                                 </TableCell>
-                                <TableCell>{new Date(work.job_start_date).toLocaleDateString()}</TableCell>
+                                <TableCell>{formatDateUS(work.job_start_date)}</TableCell>
                                 <TableCell className="text-right">{work.weekly_time_limit}h</TableCell>
                                 <TableCell>
                                     <span className={`px-2 py-1 rounded-full text-xs ${
