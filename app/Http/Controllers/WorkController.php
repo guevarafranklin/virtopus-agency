@@ -53,7 +53,7 @@ class WorkController extends Controller
             'contract_type' => 'required|in:hourly,monthly',
             'rate' => 'required|numeric|min:0',
             'job_start_date' => 'required|date|after:' . now()->addDays(14),
-            'duration' => 'required|string',
+            'duration' => 'required|in:short-term,long-term,indefinite',
             'skills' => 'required|string',
             'status' => 'required|in:active,paused,terminate',
             'weekly_time_limit' => 'required|integer|min:0',
@@ -62,6 +62,7 @@ class WorkController extends Controller
         // Convert skills string to JSON array
         $validated['skills'] = json_encode(array_map('trim', explode(',', $validated['skills'])));
         
+        // Associate work with authenticated user
         Work::create($validated + ['user_id' => auth()->id()]);
 
         return redirect()->route('client.work.index')
@@ -100,7 +101,6 @@ class WorkController extends Controller
     {
         $user = auth()->user();
         
-        // Admin can update any work, clients can only update their own
         if ($user->role !== 'admin' && $work->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
@@ -111,7 +111,7 @@ class WorkController extends Controller
             'contract_type' => 'required|in:hourly,monthly',
             'rate' => 'required|numeric|min:0',
             'job_start_date' => 'required|date|after:' . now()->addDays(14),
-            'duration' => 'required|string',
+            'duration' => 'required|in:short-term,long-term,indefinite',
             'skills' => 'required|string',
             'status' => 'required|in:active,paused,terminate',
             'weekly_time_limit' => 'required|integer|min:0',

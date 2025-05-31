@@ -28,6 +28,20 @@ export default function Index({ works, isAdmin = false }: Props) {
         return text;
     };
 
+    // Format duration display
+    const formatDuration = (duration: string) => {
+        switch (duration) {
+            case 'short-term':
+                return 'Short term (0-3 months)';
+            case 'long-term':
+                return 'Long term (6+ months)';
+            case 'indefinite':
+                return 'Indefinite contract';
+            default:
+                return duration;
+        }
+    };
+
     // Delete action
     const deleteWork = (id: number) => {
         if (confirm('Are you sure you want to delete this work?')) {
@@ -57,6 +71,7 @@ export default function Index({ works, isAdmin = false }: Props) {
                             <TableHead>Contract Type</TableHead>
                             <TableHead className="text-right">Rate</TableHead>
                             <TableHead>Start Date</TableHead>
+                            <TableHead>Contract Length</TableHead>
                             <TableHead className="text-right">Weekly Limit</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Skills</TableHead>
@@ -78,6 +93,7 @@ export default function Index({ works, isAdmin = false }: Props) {
                                     ${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'}
                                 </TableCell>
                                 <TableCell>{formatDateUS(work.job_start_date)}</TableCell>
+                                <TableCell>{formatDuration(work.duration)}</TableCell>
                                 <TableCell className="text-right">{work.weekly_time_limit}h</TableCell>
                                 <TableCell>
                                     <span className={`px-2 py-1 rounded-full text-xs ${

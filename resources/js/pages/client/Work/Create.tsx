@@ -7,14 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getMinDateForWork } from '@/lib/date-utils';
 
-
 type CreateWorkForm = {
     title: string;
     description: string;
     contract_type: 'hourly' | 'monthly';
     rate: number;
     job_start_date: string;
-    duration: string; // Changed from number to string
+    duration: 'short-term' | 'long-term' | 'indefinite';
     skills: string;
     status: 'active' | 'paused' | 'terminate';
     weekly_time_limit: number;
@@ -27,7 +26,7 @@ export default function Create() {
         contract_type: 'hourly',
         rate: 0,
         job_start_date: '',
-        duration: '',
+        duration: 'short-term',
         skills: '',
         status: 'active',
         weekly_time_limit: 0,
@@ -42,6 +41,8 @@ export default function Create() {
         <AppLayout>
             <Head title="Create Work" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <h1 className="text-2xl font-bold mb-4">Create a New Job</h1>
+                
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
                         <Label htmlFor="title">Title</Label>
@@ -51,9 +52,11 @@ export default function Create() {
                             value={data.title}
                             onChange={(e) => setData('title', e.target.value)}
                             className="mt-1 block w-full"
+                            required
                         />
                         <InputError message={errors.title} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="description">Description</Label>
                         <Textarea
@@ -66,6 +69,7 @@ export default function Create() {
                         />
                         <InputError message={errors.description} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="contract_type">Contract Type</Label>
                         <select
@@ -80,6 +84,7 @@ export default function Create() {
                         </select>
                         <InputError message={errors.contract_type} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="rate">Rate ({data.contract_type === 'hourly' ? 'per hour' : 'per month'})</Label>
                         <Input
@@ -92,6 +97,7 @@ export default function Create() {
                         />
                         <InputError message={errors.rate} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="job_start_date">Job Start Date</Label>
                         <Input
@@ -109,19 +115,24 @@ export default function Create() {
                         </p>
                         <InputError message={errors.job_start_date} />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="duration">Duration (in days)</Label>
-                        <Input
+                        <Label htmlFor="duration">Contract Length</Label>
+                        <select
                             id="duration"
                             name="duration"
                             value={data.duration}
-                            onChange={(e) => setData('duration', e.target.value)} // Remove Number() conversion
-                            className="mt-1 block w-full"
-                            type="text" // Changed from number to text
-                            placeholder="Enter duration in days"
-                        />
+                            onChange={(e) => setData('duration', e.target.value as 'short-term' | 'long-term' | 'indefinite')}
+                            className="mt-1 block w-full border rounded-md p-2"
+                            required
+                        >
+                            <option value="short-term">Short term (0-3 months)</option>
+                            <option value="long-term">Long term (6+ months)</option>
+                            <option value="indefinite">Indefinite contract</option>
+                        </select>
                         <InputError message={errors.duration} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="skills">Skills</Label>
                         <Input
@@ -134,6 +145,7 @@ export default function Create() {
                         />
                         <InputError message={errors.skills} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="weekly_time_limit">Weekly Time Limit (hours)</Label>
                         <Input
@@ -146,6 +158,7 @@ export default function Create() {
                         />
                         <InputError message={errors.weekly_time_limit} />
                     </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="status">Status</Label>
                         <select
@@ -161,8 +174,11 @@ export default function Create() {
                         </select>
                         <InputError message={errors.status} />
                     </div>
+
                     <div className="flex items-center gap-4">
-                        <Button disabled={processing}>Create Work</Button>
+                        <Button type="submit" disabled={processing}>
+                            Create Work
+                        </Button>
                     </div>
                 </form>
             </div>

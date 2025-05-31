@@ -48,7 +48,7 @@ export interface Work {
     contract_type: 'hourly' | 'monthly';
     rate: number;
     job_start_date: string;
-    duration: string;
+    duration: 'short-term' | 'long-term' | 'indefinite'; // Updated to use string enum
     skills: string;
     status: 'active' | 'paused' | 'terminate';
     weekly_time_limit: number;
