@@ -48,6 +48,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'update' => 'client.work.update',
             'destroy' => 'client.work.destroy',
         ]);
+
+        // Client timesheet routes
+        Route::get('/timesheet', [App\Http\Controllers\Client\TimesheetController::class, 'index'])->name('client.timesheet.index');
+        Route::get('/timesheet/{work}', [App\Http\Controllers\Client\TimesheetController::class, 'show'])->name('client.timesheet.show');
     });
 
     // Allow both admin and freelancer to access freelancer routes

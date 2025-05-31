@@ -126,12 +126,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             >
                                                 Post Jobs
                                             </Link>
+                                            {auth.user.role === 'client' && (
                                             <Link
-                                                href="/client/projects"
+                                                href={route('client.timesheet.index')}
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             >
-                                                Hired Talent
+                                                Timesheet & Billing
                                             </Link>
+                                         )}
                                             <Link
                                                 href="/client/settings"
                                                 className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
