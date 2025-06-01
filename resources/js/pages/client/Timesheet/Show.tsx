@@ -110,7 +110,11 @@ export default function Show({ work, tasks, summary, filters, dateRange }: Props
                             </TableHeader>
                             <TableBody>
                                 {tasks.map((task) => {
-                                    const taskCost = (task.billable_hours ?? 0) * (task.contract?.work?.rate ?? 0);
+                                    // Fix: Add null checks for contract and work
+                                    const taskCost = task.contract?.work?.rate 
+                                        ? (task.billable_hours ?? 0) * task.contract.work.rate 
+                                        : 0;
+                                    
                                     return (
                                         <TableRow key={task.id}>
                                             <TableCell>{task.title}</TableCell>
