@@ -14,74 +14,168 @@ class TimesheetController extends Controller
 {
     public function index(Request $request)
     {
-        return Inertia::render('client/Timesheet/Index', [
-        'works' => [],
-        'freelancers' => [],
-        'filters' => [
-            'filter' => 'current_week',
-            'freelancer_id' => null,
-            'start_date' => null,
-            'end_date' => null,
-        ],
-        'dateRange' => [
-            'start' => now()->format('Y-m-d'),
-            'end' => now()->format('Y-m-d'),
-            'label' => 'Current Week',
-        ]
-    ]);
+        \Log::info('Starting timesheet index');
         
+        $clientId = auth()->id();
+        \Log::info('Client ID: ' . $clientId);
+        
+        // First, let's see what data we actually have
+        $allWorks = Work::where('user_id', $clientId)->get();
+        \Log::info('All works for client: ' . $allWorks->count());
+        
+        $allContracts = Contract::whereHas('work', function($query) use ($clientId) {
+            $query->where('user_id', $clientId);
+        })->get();
+        \Log::info('All contracts for client works: ' . $allContracts->count());
+        
+        $allTasks = Task::whereHas('contract.work', function($query) use ($clientId) {
+            $query->where('user_id', $clientId);
+        })->where('is_billable', true)->get();
+        \Log::info('All billable tasks for client contracts: ' . $allTasks->count());
+        
+        // Get works with proper relationships loaded
+        $works = Work::with([
+            'contracts' => function($query) {
+                $query->with(['user', 'tasks' => function($taskQuery) {
+                    $taskQuery->where('is_billable', true);
+                }]);
+            }
+        ])
+        ->where('user_id', $clientId)
+        ->whereHas('contracts')
+        ->get();
+        
+        \Log::info('Works with contracts loaded: ' . $works->count());
+        
+        // Log individual work details
+        foreach($works as $work) {
+            \Log::info("Work {$work->id}: {$work->title} has {$work->contracts->count()} contracts");
+            foreach($work->contracts as $contract) {
+                \Log::info("  Contract {$contract->id} with user {$contract->user->name} has {$contract->tasks->count()} billable tasks");
+            }
+        }
+        
+        // Get all freelancers who have contracts with this client's works
+        $freelancers = Contract::with('user')
+            ->whereHas('work', function($query) use ($clientId) {
+                $query->where('user_id', $clientId);
+            })
+            ->get()
+            ->pluck('user')
+            ->unique('id')
+            ->values();
+        
+        \Log::info('Freelancers found: ' . $freelancers->count());
+        
+        // Process works data for display - FIXED STRUCTURE
+        $processedWorks = $works->map(function($work) {
+            $contractData = $work->contracts->map(function($contract) {
+                $billableTasks = $contract->tasks->where('is_billable', true);
+                $totalHours = $billableTasks->sum('billable_hours');
+                
+                \Log::info("Processing contract {$contract->id}: {$billableTasks->count()} billable tasks, {$totalHours} hours");
+                
+                return [
+                    'contract' => $contract,
+                    'freelancer' => $contract->user,
+                    'total_hours' => $totalHours,
+                    'tasks_count' => $billableTasks->count(),
+                    'contract_type' => $contract->work->contract_type,
+                    'client_rate' => floatval($contract->work->rate),
+                    'freelancer_rate' => floatval($contract->work->rate * (100 - $contract->agency_rate) / 100),
+                ];
+            });
+            
+            $workData = [
+                'work' => $work,
+                'contracts' => $contractData,
+                'total_hours' => $contractData->sum('total_hours'),
+                'tasks_count' => $contractData->sum('tasks_count'),
+            ];
+            
+            \Log::info("Work {$work->id} processed: {$contractData->count()} contracts, {$workData['total_hours']} total hours");
+            
+            return $workData;
+        });
+        
+        \Log::info('Final processed works count: ' . $processedWorks->count());
+        
+        return Inertia::render('client/Timesheet/Index', [
+            'works' => $processedWorks,
+            'freelancers' => $freelancers,
+            'filters' => [
+                'filter' => 'current_week',
+                'freelancer_id' => null,
+                'start_date' => null,
+                'end_date' => null,
+            ],
+            'dateRange' => [
+                'start' => now()->startOfWeek()->format('Y-m-d'),
+                'end' => now()->endOfWeek()->format('Y-m-d'),
+                'label' => 'Current Week',
+            ],
+            'debug' => [
+                'client_id' => $clientId,
+                'all_works' => $allWorks->count(),
+                'all_contracts' => $allContracts->count(),
+                'all_tasks' => $allTasks->count(),
+                'works_with_contracts' => $works->count(),
+                'freelancers_count' => $freelancers->count(),
+                'processed_works' => $processedWorks->count(),
+            ]
+        ]);
     }
 
     public function show(Work $work, Request $request)
     {
-        // Ensure the work belongs to the authenticated client
         if ($work->user_id !== auth()->id()) {
             abort(403, 'Unauthorized');
         }
 
-        $dateRange = $this->getDateRange($request->filter ?? 'current_week', $request->start_date, $request->end_date);
+        // Load the work with all its contracts and tasks
+        $work->load([
+            'contracts.user',
+            'contracts.tasks' => function($query) {
+                $query->where('is_billable', true);
+            }
+        ]);
 
-        $work->load(['contracts.user']);
-
-        // Get all tasks for this work's contracts within date range
+        // Get all billable tasks for this work
         $tasks = Task::with(['contract.user'])
             ->whereHas('contract', function($query) use ($work) {
                 $query->where('work_id', $work->id);
             })
             ->where('is_billable', true)
-            ->whereBetween('start_time', [$dateRange['start'], $dateRange['end']])
             ->orderBy('start_time', 'desc')
             ->get();
 
-        // Calculate summary
-        $totalHours = $tasks->sum('billable_hours');
-        $totalCost = $tasks->sum(function($task) {
-            return $task->billable_hours * $task->contract->work->rate;
-        });
-        $totalFreelancerEarnings = $tasks->sum(function($task) {
-            $freelancerRate = $task->contract->work->rate * (100 - $task->contract->agency_rate) / 100;
-            return $task->billable_hours * $freelancerRate;
-        });
-        $totalAgencyEarnings = $totalCost - $totalFreelancerEarnings;
+        $summary = [
+            'total_hours' => $tasks->sum('billable_hours'),
+            'total_cost' => $tasks->sum(function($task) {
+                return $task->billable_hours * $task->contract->work->rate;
+            }),
+            'total_freelancer_earnings' => $tasks->sum(function($task) {
+                $freelancerRate = $task->contract->work->rate * (100 - $task->contract->agency_rate) / 100;
+                return $task->billable_hours * $freelancerRate;
+            }),
+            'total_agency_earnings' => 0, // Will calculate this
+        ];
+        
+        $summary['total_agency_earnings'] = $summary['total_cost'] - $summary['total_freelancer_earnings'];
 
         return Inertia::render('client/Timesheet/Show', [
             'work' => $work,
             'tasks' => $tasks,
-            'summary' => [
-                'total_hours' => $totalHours,
-                'total_cost' => $totalCost,
-                'total_freelancer_earnings' => $totalFreelancerEarnings,
-                'total_agency_earnings' => $totalAgencyEarnings,
-            ],
+            'summary' => $summary,
             'filters' => [
-                'filter' => $request->filter ?? 'current_week',
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'filter' => 'current_week',
+                'start_date' => null,
+                'end_date' => null,
             ],
             'dateRange' => [
-                'start' => $dateRange['start']->format('Y-m-d'),
-                'end' => $dateRange['end']->format('Y-m-d'),
-                'label' => $this->getDateRangeLabel($request->filter ?? 'current_week'),
+                'start' => now()->startOfWeek()->format('Y-m-d'),
+                'end' => now()->endOfWeek()->format('Y-m-d'),
+                'label' => 'Current Week',
             ]
         ]);
     }
