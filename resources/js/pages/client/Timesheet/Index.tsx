@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Table,
     TableBody,
@@ -9,7 +9,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 
 interface WorkContractData {
     contract?: {
@@ -58,12 +62,20 @@ interface DebugInfo {
     works_with_contracts?: number;
     processed_works?: number;
     freelancers_count?: number;
+    date_filter?: string;
+    date_range?: string;
+    freelancer_filter?: string;
 }
 
 interface Props {
     works: WorkData[];
     freelancers: Freelancer[];
-    filters: Record<string, unknown>;
+    filters: {
+        filter?: string;
+        freelancer_id?: string;
+        start_date?: string;
+        end_date?: string;
+    };
     dateRange: {
         start: string;
         end: string;
@@ -73,8 +85,62 @@ interface Props {
 }
 
 export default function Index({ works, freelancers, filters, dateRange, debug }: Props) {
+    const [dateFilter, setDateFilter] = useState(filters.filter || 'current_week');
+    const [freelancerId, setFreelancerId] = useState(filters.freelancer_id || '');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+
     // Add console logging to see what data we're getting
     console.log('Timesheet Index Props:', { works, freelancers, filters, dateRange, debug });
+
+    useEffect(() => {
+        setDateFilter(filters.filter || 'current_week');
+        setFreelancerId(filters.freelancer_id || '');
+        setStartDate(filters.start_date || '');
+        setEndDate(filters.end_date || '');
+    }, [filters]);
+
+    const handleFilter = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        const params: Record<string, string> = {
+            filter: dateFilter,
+        };
+
+        if (freelancerId) {
+            params.freelancer_id = freelancerId;
+        }
+
+        if (dateFilter === 'custom') {
+            if (startDate) params.start_date = startDate;
+            if (endDate) params.end_date = endDate;
+        }
+
+        router.get(route('client.timesheet.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const clearFilters = () => {
+        setDateFilter('current_week');
+        setFreelancerId('');
+        setStartDate('');
+        setEndDate('');
+        
+        router.get(route('client.timesheet.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    // Show "Show All Projects" button when no data is found
+    const showAllProjects = () => {
+        router.get(route('client.timesheet.index'), { filter: 'all_time' }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
     
     return (
         <AppLayout>
@@ -86,6 +152,83 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                         {dateRange.label}: {dateRange.start} - {dateRange.end}
                     </div>
                 </div>
+
+                {/* Date Filter Controls */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Filter Timesheet</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleFilter} className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-end">
+                            <div className="grid gap-2">
+                                <Label htmlFor="filter">Time Period</Label>
+                                <select
+                                    id="filter"
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                    className="border rounded-md p-2"
+                                >
+                                    <option value="current_week">Current Week</option>
+                                    <option value="last_week">Last Week</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="last_3_months">Last 3 Months</option>
+                                    <option value="all_time">All Time</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="freelancer">Freelancer</Label>
+                                <select
+                                    id="freelancer"
+                                    value={freelancerId}
+                                    onChange={(e) => setFreelancerId(e.target.value)}
+                                    className="border rounded-md p-2"
+                                >
+                                    <option value="">All Freelancers</option>
+                                    {freelancers.map((freelancer) => (
+                                        <option key={freelancer.id} value={freelancer.id}>
+                                            {freelancer.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            {dateFilter === 'custom' && (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="start_date">Start Date</Label>
+                                        <Input
+                                            id="start_date"
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                        />
+                                        <p className="text-xs text-gray-500">
+                                            Displays as MM/DD/YYYY
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="end_date">End Date</Label>
+                                        <Input
+                                            id="end_date"
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                        />
+                                        <p className="text-xs text-gray-500">
+                                            Displays as MM/DD/YYYY
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex gap-2">
+                                <Button type="submit">Filter</Button>
+                                <Button type="button" variant="outline" onClick={clearFilters}>
+                                    Clear
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
                 
                 {/* Debug Info */}
                 {debug && (
@@ -96,9 +239,12 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                         <CardContent>
                             <div className="space-y-2 text-sm">
                                 <div><strong>Client ID:</strong> {debug.client_id}</div>
+                                <div><strong>Date Filter:</strong> {debug.date_filter}</div>
+                                <div><strong>Date Range:</strong> {debug.date_range}</div>
+                                <div><strong>Freelancer Filter:</strong> {debug.freelancer_filter || 'None'}</div>
                                 <div><strong>All Works:</strong> {debug.all_works}</div>
                                 <div><strong>All Contracts:</strong> {debug.all_contracts}</div>
-                                <div><strong>All Tasks:</strong> {debug.all_tasks}</div>
+                                <div><strong>All Tasks (in range):</strong> {debug.all_tasks}</div>
                                 <div><strong>Works with Contracts:</strong> {debug.works_with_contracts}</div>
                                 <div><strong>Processed Works:</strong> {debug.processed_works}</div>
                                 <div><strong>Freelancers:</strong> {debug.freelancers_count}</div>
@@ -187,7 +333,10 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                     {workData.work?.id && (
                                         <Link
                                             href={route('client.timesheet.show', { 
-                                                work: workData.work.id
+                                                work: workData.work.id,
+                                                filter: filters.filter,
+                                                start_date: filters.start_date,
+                                                end_date: filters.end_date,
                                             })}
                                             className={buttonVariants({ variant: 'outline', size: 'sm' })}
                                         >
@@ -237,8 +386,21 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                 ) : (
                     <Card>
                         <CardContent className="text-center py-8 text-gray-500">
-                            <p>No projects with contracts found.</p>
-                            <p className="text-sm mt-2">Check the debug information above to see what data is available.</p>
+                            <p>No projects with billable tasks found for the selected time period.</p>
+                            <p className="text-sm mt-2 mb-4">
+                                {filters.filter !== 'current_week' ? 
+                                    'Try selecting a different date range or check if there are any billable tasks.' :
+                                    'Your projects may not have billable tasks in the current week.'
+                                }
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                                <Button onClick={showAllProjects} variant="outline">
+                                    Show All Projects
+                                </Button>
+                                <Button onClick={clearFilters}>
+                                    Reset Filters
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
