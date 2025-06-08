@@ -85,8 +85,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ]);
 
     // Payroll routes
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
-    Route::get('/payroll/contract/{contract}', [PayrollController::class, 'show'])->name('admin.payroll.show');
+    Route::get('/payroll', [App\Http\Controllers\Admin\PayrollController::class, 'index'])->name('admin.payroll.index');
+    Route::get('/payroll/contract/{contract}', [App\Http\Controllers\Admin\PayrollController::class, 'show'])->name('admin.payroll.show');
 });
 
 });

@@ -26,18 +26,29 @@ interface Props {
         contract_type: string;
     };
     filters: {
+        filter?: string;
         start_date?: string;
         end_date?: string;
     };
+    dateRange: {
+        start: string;
+        end: string;
+        label: string;
+    };
 }
 
-export default function Show({ contract, tasks, summary, filters }: Props) {
+export default function Show({ contract, tasks, summary, filters, dateRange }: Props) {
     return (
         <AppLayout>
             <Head title={`Payroll - ${contract.work.title}`} />
             <div className="mt-8 space-y-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold">Contract Payroll Details</h1>
+                    <div>
+                        <h1 className="text-3xl font-bold">Contract Payroll Details</h1>
+                        <p className="text-gray-600 mt-1">
+                            {dateRange.label} Report
+                        </p>
+                    </div>
                     <Link
                         href={route('admin.payroll.index', filters)}
                         className={buttonVariants({ variant: 'outline' })}
@@ -54,8 +65,11 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div><strong>Project:</strong> {contract.work.title}</div>
+                            <div><strong>Client:</strong> {contract.work.user?.name || 'N/A'}</div>
                             <div><strong>Freelancer:</strong> {contract.user.name}</div>
                             <div><strong>Type:</strong> {contract.work.contract_type}</div>
+                            <div><strong>Rate:</strong> ${contract.work.rate}/{contract.work.contract_type === 'hourly' ? 'hr' : 'month'}</div>
+                            <div><strong>Agency Rate:</strong> {contract.agency_rate}%</div>
                             <div><strong>Weekly Limit:</strong> {contract.work.weekly_time_limit} hours</div>
                             <div><strong>Status:</strong> {contract.work.status}</div>
                         </CardContent>
@@ -92,6 +106,12 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                                     </span>
                                 </div>
                             </div>
+                            
+                            <div className="border-t pt-2 mt-4">
+                                <div className="text-sm text-gray-600">
+                                    <strong>Period:</strong> {dateRange.start} - {dateRange.end}
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -99,7 +119,7 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                 {/* Tasks Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Billable Tasks</CardTitle>
+                        <CardTitle>Billable Tasks ({tasks.length})</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -116,7 +136,9 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                             </TableHeader>
                             <TableBody>
                                 {tasks.map((task) => {
-                                    const taskEarnings = (task.billable_hours ?? 0) * summary.freelancer_rate;
+                                    const taskEarnings = summary.contract_type === 'monthly' 
+                                        ? 0 // Don't show individual task earnings for monthly contracts
+                                        : (task.billable_hours ?? 0) * summary.freelancer_rate;
                                     return (
                                         <TableRow key={task.id}>
                                             <TableCell>{task.title}</TableCell>
@@ -133,7 +155,13 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                                                     {task.status}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right">${taskEarnings.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                                {summary.contract_type === 'monthly' ? (
+                                                    <span className="text-blue-600 text-xs">Fixed Rate</span>
+                                                ) : (
+                                                    `$${taskEarnings.toFixed(2)}`
+                                                )}
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })}
@@ -141,7 +169,7 @@ export default function Show({ contract, tasks, summary, filters }: Props) {
                         </Table>
                         {tasks.length === 0 && (
                             <div className="text-center py-8 text-gray-500">
-                                No billable tasks found for this contract.
+                                No billable tasks found for this contract in the selected time period.
                             </div>
                         )}
                     </CardContent>
