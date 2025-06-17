@@ -11,10 +11,19 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    // Remove or comment out public registration routes
+    // Route::get('register', [RegisteredUserController::class, 'create'])
+    //     ->name('register');
+    // Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // Redirect register routes to login
+    Route::get('register', function () {
+        return redirect()->route('login')->with('info', 'Registration is restricted. Please contact your administrator.');
+    })->name('register');
+
+    Route::post('register', function () {
+        return redirect()->route('login')->with('info', 'Registration is restricted. Please contact your administrator.');
+    });
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

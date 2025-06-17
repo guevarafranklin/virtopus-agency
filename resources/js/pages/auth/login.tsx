@@ -97,14 +97,19 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    Don't have an account?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
-                        Sign up
-                    </TextLink>
+                    Need help? Contact your administrator.
                 </div>
             </form>
 
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+            {status && (
+                <div className={`mb-4 text-center text-sm font-medium ${
+                    status.includes('restricted') || status.includes('info') 
+                        ? 'text-blue-600' 
+                        : 'text-green-600'
+                }`}>
+                    {status}
+                </div>
+            )}
         </AuthLayout>
     );
 }
