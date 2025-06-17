@@ -32,7 +32,7 @@ class WelcomeNewUser extends Mailable
             with: [
                 'user' => $this->user,
                 'temporaryPassword' => $this->temporaryPassword,
-                'loginUrl' => route('login'),
+                'loginUrl' => env('APP_TESTING_URL'),
                 'companyName' => config('app.name', 'Virtopus Agency'),
                 'supportEmail' => config('mail.from.address'),
                 'companyUrl' => config('app.url'),
