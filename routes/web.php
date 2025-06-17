@@ -75,23 +75,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/contracts/{contract}', [ContractController::class, 'freelancerShow'])->name('freelancer.contract.show');
     });
 
+    // Admin routes
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    // ...existing routes...
-    
-    Route::resource('contract', ContractController::class)->names([
-        'index' => 'admin.contract.index',
-        'create' => 'admin.contract.create',
-        'store' => 'admin.contract.store',
-        'show' => 'admin.contract.show',
-        'edit' => 'admin.contract.edit',
-        'update' => 'admin.contract.update',
-        'destroy' => 'admin.contract.destroy',
-    ]);
+        Route::resource('contract', ContractController::class)->names([
+            'index' => 'admin.contract.index',
+            'create' => 'admin.contract.create',
+            'store' => 'admin.contract.store',
+            'show' => 'admin.contract.show',
+            'edit' => 'admin.contract.edit',
+            'update' => 'admin.contract.update',
+            'destroy' => 'admin.contract.destroy',
+        ]);
+        
+        Route::resource('user', UserController::class)->names([
+            'index' => 'admin.user.index',
+            'create' => 'admin.user.create',
+            'store' => 'admin.user.store',
+            'show' => 'admin.user.show',
+            'edit' => 'admin.user.edit',
+            'update' => 'admin.user.update',
+            'destroy' => 'admin.user.destroy',
+        ]);
 
-    // Payroll routes
-    Route::get('/payroll', [App\Http\Controllers\Admin\PayrollController::class, 'index'])->name('admin.payroll.index');
-    Route::get('/payroll/contract/{contract}', [App\Http\Controllers\Admin\PayrollController::class, 'show'])->name('admin.payroll.show');
-});
+        Route::get('/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
+        Route::get('/payroll/{contract}', [PayrollController::class, 'show'])->name('admin.payroll.show');
+    });
 
 });
 

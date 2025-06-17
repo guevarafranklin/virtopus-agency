@@ -10,34 +10,59 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Users, BookOpen, LayoutGrid, Menu, UserRoundCog} from 'lucide-react';
+import { Users, BookOpen, LayoutGrid, Menu, UserRoundCog, Briefcase, Clock, FileText, PlusCircle, Settings as SettingsIcon } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
-const mainNavItems: NavItem[] = [
+// Role-specific navigation items
+const adminNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
+        title: 'Contracts',
+        href: '/admin/contract',
+        icon: FileText,
     },
     {
-        title: 'Client',
-        href: '/client',
-        icon: BookOpen,
-    },
-    {
-        title: 'Freelancer',
-        href: '/freelancer',
+        title: 'Manage Users',
+        href: '/admin/user',
         icon: Users,
     },
     {
-        title: 'Admin',
-        href: '/admin',
-        icon: UserRoundCog,
+        title: 'Payroll',
+        href: '/admin/payroll',
+        icon: Briefcase,
+    },
+    {
+        title: 'Settings',
+        href: '/admin/settings',
+        icon: SettingsIcon,
     },
 ];
 
+const clientNavItems: NavItem[] = [
+    {
+        title: 'Post Jobs',
+        href: '/client/work',
+        icon: PlusCircle,
+    },
+    {
+        title: 'Timesheet & Billing',
+        href: '/client/timesheet',
+        icon: Clock,
+    },
+];
 
+const freelancerNavItems: NavItem[] = [
+    {
+        title: 'Tasks',
+        href: '/freelancer/task',
+        icon: FileText,
+    },
+    {
+        title: 'My Contracts',
+        href: '/freelancer/contract',
+        icon: Briefcase,
+    },
+];
 
 const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
@@ -49,6 +74,54 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    
+    // Determine which navigation items to show based on user role
+    const getNavItemsForRole = () => {
+        const userRole = auth.user.role;
+        switch (userRole) {
+            case 'admin':
+                return adminNavItems;
+            case 'client':
+                return clientNavItems;
+            case 'freelancer':
+                return freelancerNavItems;
+            default:
+                return [];
+        }
+    };
+
+    const getRoleLabel = () => {
+        const userRole = auth.user.role;
+        switch (userRole) {
+            case 'admin':
+                return 'Admin';
+            case 'client':
+                return 'Client';
+            case 'freelancer':
+                return 'Freelancer';
+            default:
+                return 'Dashboard';
+        }
+    };
+
+    const getRoleIcon = () => {
+        const userRole = auth.user.role;
+        switch (userRole) {
+            case 'admin':
+                return UserRoundCog;
+            case 'client':
+                return BookOpen;
+            case 'freelancer':
+                return Users;
+            default:
+                return LayoutGrid;
+        }
+    };
+
+    const currentNavItems = getNavItemsForRole();
+    const roleLabel = getRoleLabel();
+    const RoleIcon = getRoleIcon();
+
     return (
         <>
             <div className="border-sidebar-border/80 border-b">
@@ -69,15 +142,20 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
                                         <div className="flex flex-col space-y-4">
-                                            {mainNavItems.map((item) => (
+                                            {/* Dashboard Link */}
+                                            <Link href="/dashboard" className="flex items-center space-x-2 font-medium">
+                                                <Icon iconNode={LayoutGrid} className="h-5 w-5" />
+                                                <span>Dashboard</span>
+                                            </Link>
+                                            
+                                            {/* Role-specific navigation items */}
+                                            {currentNavItems.map((item) => (
                                                 <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
                                                     {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
                                                     <span>{item.title}</span>
                                                 </Link>
                                             ))}
                                         </div>
-
-                                        
                                     </div>
                                 </div>
                             </SheetContent>
@@ -110,109 +188,31 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     )}
                                 </NavigationMenuItem>
 
-                                {/* Dropdown for Client */}
-                                <NavigationMenuItem className="relative flex h-full items-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-9 px-3">
-                                                <Icon iconNode={BookOpen} className="mr-2 h-4 w-4" />
-                                                Client
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-56">
-                                            <Link
-                                                href="/client/work"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Post Jobs
-                                            </Link>
-                                            
-                                            <Link
-                                                href={route('client.timesheet.index')}
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Timesheet & Billing
-                                            </Link>
-                                         
-                                            <Link
-                                                href="/client/settings"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Timesheets
-                                            </Link>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </NavigationMenuItem>
-
-                                {/* Dropdown for Freelancer */}
-                                <NavigationMenuItem className="relative flex h-full items-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-9 px-3">
-                                                <Icon iconNode={Users} className="mr-2 h-4 w-4" />
-                                                Freelancer
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-56">
-                                        <Link
-                                                href="/freelancer/task"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Tasks
-                                            </Link>
-                                            <Link
-                                                href={route('freelancer.contract.index')}
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                My Contracts 
-                                            </Link>
-                                            <Link
-                                                href="/freelancer/tasks"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Work Diary
-                                            </Link>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </NavigationMenuItem>
-
-                                {/* Dropdown for Admin */}
-                                <NavigationMenuItem className="relative flex h-full items-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-9 px-3">
-                                                <Icon iconNode={UserRoundCog} className="mr-2 h-4 w-4" />
-                                                Admin
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-56">
-                                            <Link
-                                                href="/admin/contract"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Contracts 
-                                            </Link>
-                                            <Link
-                                                href="/admin/user"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Manage Users
-                                            </Link>
-                                            <Link
-                                                href={route('admin.payroll.index')}
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Payroll
-                                            </Link>
-                                            <Link
-                                                href="/admin/settings"
-                                                className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            >
-                                                Settings
-                                            </Link>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </NavigationMenuItem>
+                                {/* Role-specific Dropdown */}
+                                {currentNavItems.length > 0 && (
+                                    <NavigationMenuItem className="relative flex h-full items-center">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-9 px-3">
+                                                    <Icon iconNode={RoleIcon} className="mr-2 h-4 w-4" />
+                                                    {roleLabel}
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent className="w-56">
+                                                {currentNavItems.map((item) => (
+                                                    <Link
+                                                        key={item.title}
+                                                        href={item.href}
+                                                        className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                    >
+                                                        {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
+                                                        {item.title}
+                                                    </Link>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </NavigationMenuItem>
+                                )}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
@@ -220,7 +220,6 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
                             
-                           
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
