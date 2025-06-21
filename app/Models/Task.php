@@ -41,14 +41,14 @@ class Task extends Model
         return null;
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function contract()
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     // Calculate billable hours from start and end time
