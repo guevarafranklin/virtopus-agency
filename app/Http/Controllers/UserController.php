@@ -16,8 +16,13 @@ class UserController extends Controller
 {
     public function index()
     {
+        // Exclude the current authenticated user from the list
+        $users = User::where('id', '!=', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return Inertia::render('admin/user/Index', [
-            'users' => User::all()
+            'users' => $users
         ]);
     }
 
@@ -69,6 +74,12 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        // Prevent admins from editing their own account through this interface
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'You cannot edit your own account through user management. Use your profile settings instead.');
+        }
+
         return Inertia::render('admin/user/Edit', [
             'user' => $user
         ]);
@@ -76,6 +87,12 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        // Prevent admins from updating their own account through this interface
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'You cannot edit your own account through user management. Use your profile settings instead.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
@@ -90,6 +107,12 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Prevent admins from deleting their own account
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'You cannot delete your own account.');
+        }
+
         $user->delete();
 
         return redirect()->route('admin.user.index')
@@ -98,6 +121,12 @@ class UserController extends Controller
 
     public function resetPassword(User $user)
     {
+        // Prevent admins from resetting their own password through this interface
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'You cannot reset your own password through user management. Use your profile settings instead.');
+        }
+
         try {
             // Generate a new temporary password - FIXED METHOD NAME
             $temporaryPassword = PasswordService::generateTemporaryPassword();
