@@ -10,7 +10,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Users, BookOpen, LayoutGrid, Menu, UserRoundCog, Briefcase, Clock, FileText, PlusCircle, Settings as SettingsIcon } from 'lucide-react';
+import { Users, BookOpen, LayoutGrid, Menu, UserRoundCog, Briefcase, Clock, FileText, PlusCircle } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -31,11 +31,7 @@ const adminNavItems: NavItem[] = [
         href: '/admin/payroll',
         icon: Briefcase,
     },
-    {
-        title: 'Settings',
-        href: '/admin/settings',
-        icon: SettingsIcon,
-    },
+    
 ];
 
 const clientNavItems: NavItem[] = [
@@ -58,8 +54,8 @@ const freelancerNavItems: NavItem[] = [
         icon: FileText,
     },
     {
-        title: 'My Contracts',
-        href: '/freelancer/contract',
+        title: 'Earnings',
+        href: '/freelancer/earnings',
         icon: Briefcase,
     },
 ];

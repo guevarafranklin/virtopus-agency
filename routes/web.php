@@ -7,6 +7,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Freelancer\EarningsController;
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -72,6 +73,9 @@ Route::middleware('auth')->group(function () {
         // Freelancer contract routes (read-only)
         Route::get('/contracts', [ContractController::class, 'freelancerIndex'])->name('freelancer.contract.index');
         Route::get('/contracts/{contract}', [ContractController::class, 'freelancerShow'])->name('freelancer.contract.show');
+        
+        // Freelancer earnings routes
+        Route::get('/earnings', [EarningsController::class, 'index'])->name('freelancer.earnings.index');
     });
 
     // Admin routes
