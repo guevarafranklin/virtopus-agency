@@ -17,7 +17,7 @@ class ContractController extends Controller
      */
     public function index()
     {
-        $contracts = Contract::with(['work', 'user'])->get();
+        $contracts = Contract::with(['work.user', 'user'])->get();
         
         return Inertia::render('admin/contract/Index', [
             'contracts' => $contracts
@@ -29,11 +29,16 @@ class ContractController extends Controller
      */
     public function create()
     {
-        $works = Work::all();
-        $users = User::where('role', 'freelancer')->get(); // Only freelancers can have contracts
+        // Get only works that don't have any contracts assigned yet
+        $availableWorks = Work::with('user')
+            ->whereDoesntHave('contracts')
+            ->where('status', 'active')
+            ->get();
+            
+        $users = User::where('role', 'freelancer')->get();
         
         return Inertia::render('admin/contract/Create', [
-            'works' => $works,
+            'works' => $availableWorks,
             'users' => $users
         ]);
     }
@@ -43,11 +48,33 @@ class ContractController extends Controller
      */
     public function store(StoreContractRequest $request)
     {
-         $validated = $request->validate([
+        $validated = $request->validate([
             'agency_rate' => 'required|numeric|min:0|max:100',
             'work_id' => 'required|exists:works,id',
             'user_id' => 'required|exists:users,id',
         ]);
+
+        // Check if work already has a contract
+        $existingContract = Contract::where('work_id', $validated['work_id'])->first();
+        if ($existingContract) {
+            return back()->withErrors([
+                'work_id' => 'This job already has a freelancer assigned.'
+            ]);
+        }
+
+        // Check if the freelancer is available (optional - you can remove this if needed)
+        $freelancerActiveContracts = Contract::where('user_id', $validated['user_id'])
+            ->whereHas('work', function($query) {
+                $query->where('status', 'active');
+            })
+            ->count();
+
+        // Optional: Limit freelancer to X active contracts
+        if ($freelancerActiveContracts >= 5) { // Adjust this number as needed
+            return back()->withErrors([
+                'user_id' => 'This freelancer already has the maximum number of active contracts.'
+            ]);
+        }
 
         Contract::create($validated);
 
@@ -60,13 +87,11 @@ class ContractController extends Controller
      */
     public function show(Contract $contract)
     {
-    
-         $contract->load(['work', 'user']);
+        $contract->load(['work.user', 'user']);
         
         return Inertia::render('admin/contract/Show', [
             'contract' => $contract
         ]);
-    
     }
 
     /**
@@ -74,13 +99,21 @@ class ContractController extends Controller
      */
     public function edit(Contract $contract)
     {
-        $works = Work::all();
+        // For editing, show the current work plus other available works
+        $availableWorks = Work::with('user')
+            ->where(function($query) use ($contract) {
+                $query->whereDoesntHave('contracts')
+                      ->orWhere('id', $contract->work_id);
+            })
+            ->where('status', 'active')
+            ->get();
+            
         $users = User::where('role', 'freelancer')->get();
-        $contract->load(['work', 'user']);
+        $contract->load(['work.user', 'user']);
         
         return Inertia::render('admin/contract/Edit', [
             'contract' => $contract,
-            'works' => $works,
+            'works' => $availableWorks,
             'users' => $users
         ]);
     }
@@ -95,6 +128,19 @@ class ContractController extends Controller
             'work_id' => 'required|exists:works,id',
             'user_id' => 'required|exists:users,id',
         ]);
+
+        // Check if trying to assign to a work that already has a different contract
+        if ($validated['work_id'] !== $contract->work_id) {
+            $existingContract = Contract::where('work_id', $validated['work_id'])
+                ->where('id', '!=', $contract->id)
+                ->first();
+            
+            if ($existingContract) {
+                return back()->withErrors([
+                    'work_id' => 'This job already has a freelancer assigned.'
+                ]);
+            }
+        }
 
         $contract->update($validated);
 
@@ -118,7 +164,7 @@ class ContractController extends Controller
      */
     public function freelancerIndex()
     {
-        $contracts = Contract::with(['work', 'user'])
+        $contracts = Contract::with(['work.user', 'user'])
             ->where('user_id', auth()->id())
             ->get();
         
@@ -137,7 +183,7 @@ class ContractController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $contract->load(['work', 'user']);
+        $contract->load(['work.user', 'user']);
         
         return Inertia::render('freelancer/contract/Show', [
             'contract' => $contract

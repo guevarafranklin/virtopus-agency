@@ -10,9 +10,9 @@ class Contract extends Model
     use HasFactory;
 
     protected $fillable = [
-        'agency_rate',
         'work_id',
         'user_id',
+        'agency_rate',
     ];
 
     protected $casts = [
@@ -34,6 +34,7 @@ class Contract extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     /**
      * Get the tasks for the contract.
      */

@@ -37,9 +37,16 @@ export default function Edit({ contract, works, users }: Props) {
         <AppLayout>
             <Head title="Edit Contract" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold">Edit Contract</h1>
+                    <p className="text-gray-600 mt-2">
+                        Update contract details. You can reassign to available jobs only.
+                    </p>
+                </div>
+
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="work_id">Select Work</Label>
+                        <Label htmlFor="work_id">Select Job</Label>
                         <select
                             id="work_id"
                             name="work_id"
@@ -48,13 +55,18 @@ export default function Edit({ contract, works, users }: Props) {
                             className="mt-1 block w-full border rounded-md p-2"
                             required
                         >
-                            <option value={0}>Select a work...</option>
+                            <option value={0}>Select a job...</option>
                             {works.map((work) => (
                                 <option key={work.id} value={work.id}>
                                     {work.title} - {work.contract_type} (${work.rate}/{work.contract_type === 'hourly' ? 'hr' : 'month'})
+                                    | Client: {work.user?.name || 'Unknown'}
+                                    {work.id === contract.work_id && ' (Current)'}
                                 </option>
                             ))}
                         </select>
+                        <p className="text-sm text-gray-500">
+                            Only available jobs and the current job are shown
+                        </p>
                         <InputError message={errors.work_id} />
                     </div>
 
@@ -72,6 +84,7 @@ export default function Edit({ contract, works, users }: Props) {
                             {freelancers.map((user) => (
                                 <option key={user.id} value={user.id}>
                                     {user.name} ({user.email})
+                                    {user.id === contract.user_id && ' (Current)'}
                                 </option>
                             ))}
                         </select>
@@ -101,7 +114,7 @@ export default function Edit({ contract, works, users }: Props) {
 
                     <div className="flex items-center gap-4">
                         <Button type="submit" disabled={processing}>
-                            Save Changes
+                            {processing ? 'Saving Changes...' : 'Save Changes'}
                         </Button>
                     </div>
                 </form>

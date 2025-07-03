@@ -9,9 +9,8 @@ class Work extends Model
 {
     /** @use HasFactory<\Database\Factories\WorkFactory> */
     use HasFactory;
-    
+
     protected $fillable = [
-        'user_id',
         'title',
         'description',
         'contract_type',
@@ -21,12 +20,12 @@ class Work extends Model
         'skills',
         'status',
         'weekly_time_limit',
+        'user_id',
     ];
 
     protected $casts = [
+        'job_start_date' => 'date',
         'skills' => 'array',
-        'job_start_date' => 'datetime',
-        'rate' => 'decimal:2',
     ];
 
     /**
@@ -43,5 +42,17 @@ class Work extends Model
     public function contracts()
     {
         return $this->hasMany(Contract::class);
+    }
+
+    // Helper method to check if work has an assigned freelancer
+    public function hasAssignedFreelancer()
+    {
+        return $this->contracts()->exists();
+    }
+
+    // Helper method to get the assigned freelancer
+    public function getAssignedFreelancer()
+    {
+        return $this->contracts()->with('user')->first()?->user;
     }
 }
