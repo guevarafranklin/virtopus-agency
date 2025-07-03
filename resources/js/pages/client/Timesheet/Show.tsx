@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/table";
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Work, Task } from '@/types';
 import { formatDateTimeUS } from '@/lib/date-utils';
+import { type Work, type Task } from '@/types';
 
 interface Props {
     work: Work;
@@ -19,8 +19,6 @@ interface Props {
     summary: {
         total_hours: number;
         total_cost: number;
-        total_freelancer_earnings: number;
-        total_agency_earnings: number;
     };
     filters: {
         filter: string;
@@ -76,13 +74,19 @@ export default function Show({ work, tasks, summary, filters, dateRange }: Props
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div><strong>Total Hours:</strong> {summary.total_hours.toFixed(2)}h</div>
-                            <div><strong>Total Cost:</strong> ${summary.total_cost.toFixed(2)}</div>
-                            <div><strong>Freelancer Earnings:</strong> ${summary.total_freelancer_earnings.toFixed(2)}</div>
-                            <div><strong>Agency Fees:</strong> ${summary.total_agency_earnings.toFixed(2)}</div>
+                            <div>
+                                <strong>Total Cost:</strong> 
+                                <span className="text-blue-600 font-semibold text-lg ml-2">
+                                    ${summary.total_cost.toFixed(2)}
+                                </span>
+                            </div>
                             
                             <div className="border-t pt-2 mt-4">
                                 <div className="text-sm text-gray-600">
-                                    <strong>Period:</strong> {formatDateTimeUS(dateRange.start)} - {formatDateTimeUS(dateRange.end)}
+                                    <strong>Period:</strong> {dateRange.start} - {dateRange.end}
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">
+                                    This is the total amount you will be charged for work completed in this period.
                                 </div>
                             </div>
                         </CardContent>
@@ -110,7 +114,7 @@ export default function Show({ work, tasks, summary, filters, dateRange }: Props
                             </TableHeader>
                             <TableBody>
                                 {tasks.map((task) => {
-                                    // Fix: Add null checks for contract and work
+                                    // Calculate task cost based on work rate
                                     const taskCost = task.contract?.work?.rate 
                                         ? (task.billable_hours ?? 0) * task.contract.work.rate 
                                         : 0;
@@ -132,7 +136,11 @@ export default function Show({ work, tasks, summary, filters, dateRange }: Props
                                                     {task.status}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right">${taskCost.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <span className="text-blue-600 font-medium">
+                                                    ${taskCost.toFixed(2)}
+                                                </span>
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })}

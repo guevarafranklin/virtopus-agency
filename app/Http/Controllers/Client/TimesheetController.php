@@ -98,7 +98,16 @@ class TimesheetController extends Controller
                     
                     $totalHours = $billableTasks->sum('billable_hours');
                     
-                    \Log::info("Processing contract {$contract->id}: {$billableTasks->count()} billable tasks in date range, {$totalHours} hours");
+                    // Calculate client cost based on contract type
+                    if ($contract->work->contract_type === 'monthly') {
+                        // For monthly contracts, client pays the full monthly rate if there are any billable hours
+                        $clientCost = $totalHours > 0 ? floatval($contract->work->rate) : 0;
+                    } else {
+                        // For hourly contracts, calculate based on hours worked
+                        $clientCost = $totalHours * floatval($contract->work->rate);
+                    }
+                    
+                    \Log::info("Processing contract {$contract->id}: {$billableTasks->count()} billable tasks in date range, {$totalHours} hours, \${$clientCost} cost");
                     
                     return [
                         'contract' => $contract,
@@ -106,8 +115,8 @@ class TimesheetController extends Controller
                         'total_hours' => $totalHours,
                         'tasks_count' => $billableTasks->count(),
                         'contract_type' => $contract->work->contract_type,
-                        'client_rate' => floatval($contract->work->rate),
-                        'freelancer_rate' => floatval($contract->work->rate * (100 - $contract->agency_rate) / 100),
+                        'rate' => floatval($contract->work->rate), // What client pays per hour/month
+                        'total_cost' => $clientCost, // Total cost for this contract in the period
                     ];
                 });
             
@@ -116,14 +125,14 @@ class TimesheetController extends Controller
                 'contracts' => $contractData,
                 'total_hours' => $contractData->sum('total_hours'),
                 'tasks_count' => $contractData->sum('tasks_count'),
+                'total_cost' => $contractData->sum('total_cost'), // Total cost for all contracts in this work
             ];
             
-            \Log::info("Work {$work->id} processed: {$contractData->count()} contracts, {$workData['total_hours']} total hours in date range");
+            \Log::info("Work {$work->id} processed: {$contractData->count()} contracts, {$workData['total_hours']} total hours, \${$workData['total_cost']} total cost in date range");
             
             return $workData;
         });
         
-        // REMOVE THIS LINE - Don't filter out works with 0 hours for current_week
         // Only filter for specific date ranges if needed
         if ($request->filter !== 'current_week') {
             $processedWorks = $processedWorks->filter(function($work) {
@@ -187,19 +196,14 @@ class TimesheetController extends Controller
             ->orderBy('start_time', 'desc')
             ->get();
 
+        // Calculate simple billing summary - only what client needs to know
         $summary = [
             'total_hours' => $tasks->sum('billable_hours'),
             'total_cost' => $tasks->sum(function($task) {
+                // Client pays the full work rate
                 return $task->billable_hours * $task->contract->work->rate;
             }),
-            'total_freelancer_earnings' => $tasks->sum(function($task) {
-                $freelancerRate = $task->contract->work->rate * (100 - $task->contract->agency_rate) / 100;
-                return $task->billable_hours * $freelancerRate;
-            }),
-            'total_agency_earnings' => 0,
         ];
-        
-        $summary['total_agency_earnings'] = $summary['total_cost'] - $summary['total_freelancer_earnings'];
 
         return Inertia::render('client/Timesheet/Show', [
             'work' => $work,
@@ -214,7 +218,7 @@ class TimesheetController extends Controller
                 'start' => $dateRange['start']->format('Y-m-d'),
                 'end' => $dateRange['end']->format('Y-m-d'),
                 'label' => $this->getDateRangeLabel($request->filter ?? 'current_week'),
-            ]
+            ],
         ]);
     }
 

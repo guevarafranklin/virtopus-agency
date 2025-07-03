@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, Clock, FileText, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface WorkContractData {
@@ -30,8 +31,8 @@ interface WorkContractData {
     contract_type?: string;
     total_hours?: number;
     tasks_count?: number;
-    client_rate?: number;
-    freelancer_rate?: number;
+    rate?: number; // What client pays per hour/month
+    total_cost?: number; // Total cost for this contract
 }
 
 interface WorkData {
@@ -45,6 +46,7 @@ interface WorkData {
     };
     total_hours?: number;
     tasks_count?: number;
+    total_cost?: number; // Total cost for all contracts in this work
     contracts?: WorkContractData[];
 }
 
@@ -55,15 +57,15 @@ interface Freelancer {
 }
 
 interface DebugInfo {
-    client_id?: number;
-    all_works?: number;
-    all_contracts?: number;
-    all_tasks?: number;
-    works_with_contracts?: number;
-    processed_works?: number;
-    freelancers_count?: number;
-    date_filter?: string;
-    date_range?: string;
+    client_id: number;
+    all_works: number;
+    all_contracts: number;
+    all_tasks: number;
+    works_with_contracts: number;
+    freelancers_count: number;
+    processed_works: number;
+    date_filter: string;
+    date_range: string;
     freelancer_filter?: string;
 }
 
@@ -71,7 +73,7 @@ interface Props {
     works: WorkData[];
     freelancers: Freelancer[];
     filters: {
-        filter?: string;
+        filter: string;
         freelancer_id?: string;
         start_date?: string;
         end_date?: string;
@@ -89,9 +91,6 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
     const [freelancerId, setFreelancerId] = useState(filters.freelancer_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
-
-    // Add console logging to see what data we're getting
-    console.log('Timesheet Index Props:', { works, freelancers, filters, dateRange, debug });
 
     useEffect(() => {
         setDateFilter(filters.filter || 'current_week');
@@ -202,9 +201,6 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                             value={startDate}
                                             onChange={(e) => setStartDate(e.target.value)}
                                         />
-                                        <p className="text-xs text-gray-500">
-                                            Displays as MM/DD/YYYY
-                                        </p>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="end_date">End Date</Label>
@@ -214,9 +210,6 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                             value={endDate}
                                             onChange={(e) => setEndDate(e.target.value)}
                                         />
-                                        <p className="text-xs text-gray-500">
-                                            Displays as MM/DD/YYYY
-                                        </p>
                                     </div>
                                 </>
                             )}
@@ -259,40 +252,56 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                 <div className="grid gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">
+                                ${works.reduce((sum, work) => sum + (work.total_cost || 0), 0).toFixed(2)}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Total project costs
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {works.reduce((sum, work) => sum + (work.total_hours || 0), 0).toFixed(2)}h
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                                Billable hours worked
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+                            <FileText className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {works.reduce((sum, work) => sum + (work.tasks_count || 0), 0)}
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Active Contracts</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {works.reduce((sum, work) => sum + (work.contracts?.length || 0), 0)}
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Completed tasks
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{works.length}</div>
+                            <p className="text-xs text-muted-foreground">
+                                Projects with activity
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -300,7 +309,7 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                 {/* Freelancers List */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Freelancers ({freelancers.length})</CardTitle>
+                        <CardTitle>Active Freelancers ({freelancers.length})</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {freelancers.length > 0 ? (
@@ -327,7 +336,7 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                     <div>
                                         <CardTitle>{workData.work?.title || 'Unknown Work'}</CardTitle>
                                         <p className="text-sm text-gray-600 mt-1">
-                                            {(workData.total_hours || 0).toFixed(2)}h • {workData.tasks_count || 0} tasks
+                                            {(workData.total_hours || 0).toFixed(2)}h • {workData.tasks_count || 0} tasks • ${(workData.total_cost || 0).toFixed(2)} spent
                                         </p>
                                     </div>
                                     {workData.work?.id && (
@@ -354,8 +363,8 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                                 <TableHead>Contract Type</TableHead>
                                                 <TableHead className="text-right">Hours</TableHead>
                                                 <TableHead className="text-right">Tasks</TableHead>
-                                                <TableHead className="text-right">Client Rate</TableHead>
-                                                <TableHead className="text-right">Freelancer Rate</TableHead>
+                                                <TableHead className="text-right">Rate</TableHead>
+                                                <TableHead className="text-right">Total Cost</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -368,10 +377,17 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                                                     </TableCell>
                                                     <TableCell className="text-right">{contractData.tasks_count || 0}</TableCell>
                                                     <TableCell className="text-right">
-                                                        ${(contractData.client_rate || 0).toFixed(2)}/{contractData.contract_type === 'hourly' ? 'hr' : 'month'}
+                                                        ${(contractData.rate || 0).toFixed(2)}/{contractData.contract_type === 'hourly' ? 'hr' : 'month'}
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        ${(contractData.freelancer_rate || 0).toFixed(2)}/{contractData.contract_type === 'hourly' ? 'hr' : 'month'}
+                                                        <span className="text-blue-600 font-medium">
+                                                            ${(contractData.total_cost || 0).toFixed(2)}
+                                                            {contractData.contract_type === 'monthly' && contractData.total_hours && contractData.total_hours > 0 && (
+                                                                <span className="text-xs text-gray-500 block">
+                                                                    (Fixed Monthly)
+                                                                </span>
+                                                            )}
+                                                        </span>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
