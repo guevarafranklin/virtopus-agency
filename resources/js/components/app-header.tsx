@@ -53,6 +53,8 @@ const freelancerNavItems: NavItem[] = [
         href: '/freelancer/task',
         icon: FileText,
     },
+    
+    
     {
         title: 'Earnings',
         href: '/freelancer/earnings',

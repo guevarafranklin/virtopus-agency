@@ -155,17 +155,17 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                                                 <label className="text-sm font-medium text-gray-600">Contract</label>
                                                                 <p className="text-sm text-gray-800 mt-1">{task.contract.work.title}</p>
                                                             </div>
+                                                            {/* REMOVED: Client Rate - freelancers shouldn't see this */}
                                                             <div>
-                                                                <label className="text-sm font-medium text-gray-600">Client Rate</label>
-                                                                <p className="text-sm text-gray-800 mt-1">
-                                                                    ${task.contract.work.rate}/{task.contract.work.contract_type === 'hourly' ? 'hr' : 'month'}
+                                                                <label className="text-sm font-medium text-gray-600">My Hourly Rate</label>
+                                                                <p className="text-sm text-green-600 font-medium mt-1">
+                                                                    ${((task.contract.work.rate * (100 - task.contract.agency_rate)) / 100).toFixed(2)}/hr
                                                                 </p>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-medium text-gray-600">Your Rate</label>
-                                                                <p className="text-sm text-gray-800 mt-1">
-                                                                    ${((task.contract.work.rate * (100 - task.contract.agency_rate)) / 100).toFixed(2)}/{task.contract.work.contract_type === 'hourly' ? 'hr' : 'month'}
-                                                                </p>
+                                                                {task.contract.work.contract_type === 'monthly' && (
+                                                                    <p className="text-xs text-gray-500 mt-1">
+                                                                        Fixed monthly rate contract
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </>
                                                     ) : (

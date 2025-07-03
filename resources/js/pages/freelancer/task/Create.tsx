@@ -61,7 +61,12 @@ export default function Create({ contracts }: Props) {
                         <p className="text-sm text-blue-800">
                             <strong>Contract:</strong> {selectedContract.work.title}<br/>
                             <strong>Weekly Limit:</strong> {selectedContract.work.weekly_time_limit} hours<br/>
-                            <strong>Rate:</strong> ${((selectedContract.work.rate * (100 - selectedContract.agency_rate)) / 100).toFixed(2)}/{selectedContract.work.contract_type === 'hourly' ? 'hr' : 'month'}
+                            <strong>My Rate:</strong> ${((selectedContract.work.rate * (100 - selectedContract.agency_rate)) / 100).toFixed(2)}/hr
+                            {selectedContract.work.contract_type === 'monthly' && (
+                                <span className="text-xs block mt-1">
+                                    (Fixed monthly rate contract)
+                                </span>
+                            )}
                         </p>
                     </div>
                 )}
