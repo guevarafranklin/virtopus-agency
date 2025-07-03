@@ -103,3 +103,19 @@ export interface Contract {
     created_at: string;
     updated_at: string;
 }
+
+// Add this to your types file (usually types/index.ts)
+export interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}

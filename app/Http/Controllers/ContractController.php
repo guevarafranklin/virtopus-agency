@@ -15,12 +15,28 @@ class ContractController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $contracts = Contract::with(['work.user', 'user'])->get();
+        $query = Contract::with(['work.user', 'user']);
+
+        // Search functionality
+        if ($request->search) {
+            $query->whereHas('work', function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Order by latest first
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate results
+        $contracts = $query->paginate(10)->withQueryString();
         
         return Inertia::render('admin/contract/Index', [
-            'contracts' => $contracts
+            'contracts' => $contracts,
+            'filters' => [
+                'search' => $request->search,
+            ]
         ]);
     }
 

@@ -14,15 +14,35 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Exclude the current authenticated user from the list
-        $users = User::where('id', '!=', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = User::where('id', '!=', auth()->id());
+
+        // Search functionality
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Filter by role if specified
+        if ($request->role) {
+            $query->where('role', $request->role);
+        }
+
+        // Order by latest first
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate results
+        $users = $query->paginate(10)->withQueryString();
 
         return Inertia::render('admin/user/Index', [
-            'users' => $users
+            'users' => $users,
+            'filters' => [
+                'search' => $request->search,
+                'role' => $request->role,
+            ]
         ]);
     }
 
