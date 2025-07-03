@@ -1,18 +1,21 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Icon } from '@/components/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserMenuContent } from '@/components/user-menu-content';
+import AppLogo from '@/components/app-logo';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Users, BookOpen, LayoutGrid, Menu, UserRoundCog, Briefcase, Clock, FileText, PlusCircle } from 'lucide-react';
-import AppLogo from './app-logo';
-import AppLogoIcon from './app-logo-icon';
+import { Menu, LayoutGrid, FileText, Users, Briefcase, PlusCircle, Clock, DollarSign } from 'lucide-react';
+import { Icon } from './icon';
+
+interface AppHeaderProps {
+    breadcrumbs?: BreadcrumbItem[];
+}
 
 // Role-specific navigation items
 const adminNavItems: NavItem[] = [
@@ -31,7 +34,6 @@ const adminNavItems: NavItem[] = [
         href: '/admin/payroll',
         icon: Briefcase,
     },
-    
 ];
 
 const clientNavItems: NavItem[] = [
@@ -53,20 +55,19 @@ const freelancerNavItems: NavItem[] = [
         href: '/freelancer/task',
         icon: FileText,
     },
-    
-    
+    {
+        title: 'My Contracts',
+        href: '/freelancer/contract',
+        icon: Briefcase,
+    },
     {
         title: 'Earnings',
         href: '/freelancer/earnings',
-        icon: Briefcase,
+        icon: DollarSign,
     },
 ];
 
-const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
-
-interface AppHeaderProps {
-    breadcrumbs?: BreadcrumbItem[];
-}
+const activeItemStyles = 'bg-accent text-accent-foreground';
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
@@ -88,37 +89,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
         }
     };
 
-    const getRoleLabel = () => {
-        const userRole = auth.user.role;
-        switch (userRole) {
-            case 'admin':
-                return 'Admin';
-            case 'client':
-                return 'Client';
-            case 'freelancer':
-                return 'Freelancer';
-            default:
-                return 'Dashboard';
-        }
-    };
-
-    const getRoleIcon = () => {
-        const userRole = auth.user.role;
-        switch (userRole) {
-            case 'admin':
-                return UserRoundCog;
-            case 'client':
-                return BookOpen;
-            case 'freelancer':
-                return Users;
-            default:
-                return LayoutGrid;
-        }
-    };
-
     const currentNavItems = getNavItemsForRole();
-    const roleLabel = getRoleLabel();
-    const RoleIcon = getRoleIcon();
 
     return (
         <>
@@ -168,7 +139,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                                {/* Dashboard Option */}
+                                {/* Dashboard Link */}
                                 <NavigationMenuItem className="relative flex h-full items-center">
                                     <Link
                                         href="/dashboard"
@@ -186,31 +157,28 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     )}
                                 </NavigationMenuItem>
 
-                                {/* Role-specific Dropdown */}
-                                {currentNavItems.length > 0 && (
-                                    <NavigationMenuItem className="relative flex h-full items-center">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-9 px-3">
-                                                    <Icon iconNode={RoleIcon} className="mr-2 h-4 w-4" />
-                                                    {roleLabel}
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-56">
-                                                {currentNavItems.map((item) => (
-                                                    <Link
-                                                        key={item.title}
-                                                        href={item.href}
-                                                        className="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                    >
-                                                        {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
-                                                        {item.title}
-                                                    </Link>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </NavigationMenuItem>
-                                )}
+                                {/* Role-specific Navigation Items as Individual Links */}
+                                {currentNavItems.map((item) => {
+                                    const isActive = page.url.startsWith(item.href);
+                                    return (
+                                        <NavigationMenuItem key={item.title} className="relative flex h-full items-center">
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    navigationMenuTriggerStyle(),
+                                                    isActive && activeItemStyles,
+                                                    'h-9 cursor-pointer px-3',
+                                                )}
+                                            >
+                                                {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
+                                                {item.title}
+                                            </Link>
+                                            {isActive && (
+                                                <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+                                            )}
+                                        </NavigationMenuItem>
+                                    );
+                                })}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
@@ -224,25 +192,43 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                                        <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                        <AvatarFallback className="size-8 bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
+                            <DropdownMenuContent className="w-56" align="end" forceMount>
                                 <UserMenuContent user={auth.user} />
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 </div>
             </div>
-            {breadcrumbs.length > 1 && (
-                <div className="border-sidebar-border/70 flex w-full border-b">
-                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
-                        <Breadcrumbs breadcrumbs={breadcrumbs} />
+
+            {/* Breadcrumbs */}
+            {breadcrumbs.length > 0 && (
+                <nav className="border-sidebar-border/80 border-b bg-neutral-50/50 dark:bg-neutral-900/50">
+                    <div className="mx-auto flex h-12 items-center px-4 md:max-w-7xl">
+                        <ol className="flex items-center space-x-2 text-sm text-neutral-600 dark:text-neutral-400">
+                            {breadcrumbs.map((item, index) => (
+                                <li key={item.href} className="flex items-center">
+                                    {index > 0 && <span className="mx-2">/</span>}
+                                    {index === breadcrumbs.length - 1 ? (
+                                        <span className="font-medium text-neutral-900 dark:text-neutral-100">{item.title}</span>
+                                    ) : (
+                                        <Link 
+                                            href={item.href} 
+                                            className="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+                                        >
+                                            {item.title}
+                                        </Link>
+                                    )}
+                                </li>
+                            ))}
+                        </ol>
                     </div>
-                </div>
+                </nav>
             )}
         </>
     );
