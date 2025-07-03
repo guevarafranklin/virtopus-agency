@@ -61,11 +61,6 @@ const freelancerNavItems: NavItem[] = [
         icon: FileText,
     },
     {
-        title: 'My Contracts',
-        href: '/freelancer/contract',
-        icon: Briefcase,
-    },
-    {
         title: 'Earnings',
         href: '/freelancer/earnings',
         icon: DollarSign,
