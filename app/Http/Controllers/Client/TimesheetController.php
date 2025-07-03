@@ -14,10 +14,7 @@ class TimesheetController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::info('Starting timesheet index');
-        
         $clientId = auth()->id();
-        \Log::info('Client ID: ' . $clientId);
         
         // Get date range based on filter
         $dateRange = $this->getDateRange(
@@ -26,26 +23,7 @@ class TimesheetController extends Controller
             $request->end_date
         );
         
-        \Log::info('Date range: ' . $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'));
-        
-        // First, let's see what data we actually have
-        $allWorks = Work::where('user_id', $clientId)->get();
-        \Log::info('All works for client: ' . $allWorks->count());
-        
-        $allContracts = Contract::whereHas('work', function($query) use ($clientId) {
-            $query->where('user_id', $clientId);
-        })->get();
-        \Log::info('All contracts for client works: ' . $allContracts->count());
-        
-        $allTasks = Task::whereHas('contract.work', function($query) use ($clientId) {
-            $query->where('user_id', $clientId);
-        })
-        ->where('is_billable', true)
-        ->whereBetween('start_time', [$dateRange['start'], $dateRange['end']])
-        ->get();
-        \Log::info('All billable tasks for client contracts in date range: ' . $allTasks->count());
-        
-        // Get works with proper relationships loaded - NO DATE FILTERING HERE YET
+        // Get works with proper relationships loaded
         $works = Work::with([
             'contracts' => function($query) {
                 $query->with(['user', 'tasks' => function($taskQuery) {
@@ -57,14 +35,11 @@ class TimesheetController extends Controller
         ->whereHas('contracts')
         ->get();
         
-        \Log::info('Works with contracts loaded: ' . $works->count());
-        
         // Apply freelancer filter if specified
         if ($request->freelancer_id) {
             $works = $works->filter(function($work) use ($request) {
                 return $work->contracts->contains('user_id', $request->freelancer_id);
             });
-            \Log::info('Works after freelancer filter: ' . $works->count());
         }
         
         // Get all freelancers who have contracts with this client's works
@@ -79,16 +54,14 @@ class TimesheetController extends Controller
             ->unique('id')
             ->values();
         
-        \Log::info('Freelancers found: ' . $freelancers->count());
-        
-        // Process works data for display - Apply date filtering DURING processing
+        // Process works data for display - Apply date filtering during processing
         $processedWorks = $works->map(function($work) use ($dateRange, $request) {
             $contractData = $work->contracts
                 ->when($request->freelancer_id, function($collection) use ($request) {
                     return $collection->where('user_id', $request->freelancer_id);
                 })
                 ->map(function($contract) use ($dateRange) {
-                    // Filter tasks by date range DURING processing
+                    // Filter tasks by date range during processing
                     $billableTasks = $contract->tasks
                         ->where('is_billable', true)
                         ->filter(function($task) use ($dateRange) {
@@ -106,8 +79,6 @@ class TimesheetController extends Controller
                         // For hourly contracts, calculate based on hours worked
                         $clientCost = $totalHours * floatval($contract->work->rate);
                     }
-                    
-                    \Log::info("Processing contract {$contract->id}: {$billableTasks->count()} billable tasks in date range, {$totalHours} hours, \${$clientCost} cost");
                     
                     return [
                         'contract' => $contract,
@@ -128,8 +99,6 @@ class TimesheetController extends Controller
                 'total_cost' => $contractData->sum('total_cost'), // Total cost for all contracts in this work
             ];
             
-            \Log::info("Work {$work->id} processed: {$contractData->count()} contracts, {$workData['total_hours']} total hours, \${$workData['total_cost']} total cost in date range");
-            
             return $workData;
         });
         
@@ -140,8 +109,6 @@ class TimesheetController extends Controller
             });
         }
         $processedWorks = $processedWorks->values();
-        
-        \Log::info('Final processed works count after filtering: ' . $processedWorks->count());
         
         return Inertia::render('client/Timesheet/Index', [
             'works' => $processedWorks,
@@ -157,18 +124,6 @@ class TimesheetController extends Controller
                 'end' => $dateRange['end']->format('Y-m-d'),
                 'label' => $this->getDateRangeLabel($request->filter ?? 'current_week'),
             ],
-            'debug' => [
-                'client_id' => $clientId,
-                'all_works' => $allWorks->count(),
-                'all_contracts' => $allContracts->count(),
-                'all_tasks' => $allTasks->count(),
-                'works_with_contracts' => $works->count(),
-                'freelancers_count' => $freelancers->count(),
-                'processed_works' => $processedWorks->count(),
-                'date_filter' => $request->filter ?? 'current_week',
-                'date_range' => $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'),
-                'freelancer_filter' => $request->freelancer_id,
-            ]
         ]);
     }
 

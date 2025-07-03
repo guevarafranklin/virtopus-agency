@@ -56,19 +56,6 @@ interface Freelancer {
     email: string;
 }
 
-interface DebugInfo {
-    client_id: number;
-    all_works: number;
-    all_contracts: number;
-    all_tasks: number;
-    works_with_contracts: number;
-    freelancers_count: number;
-    processed_works: number;
-    date_filter: string;
-    date_range: string;
-    freelancer_filter?: string;
-}
-
 interface Props {
     works: WorkData[];
     freelancers: Freelancer[];
@@ -83,10 +70,9 @@ interface Props {
         end: string;
         label: string;
     };
-    debug?: DebugInfo;
 }
 
-export default function Index({ works, freelancers, filters, dateRange, debug }: Props) {
+export default function Index({ works, freelancers, filters, dateRange }: Props) {
     const [dateFilter, setDateFilter] = useState(filters.filter || 'current_week');
     const [freelancerId, setFreelancerId] = useState(filters.freelancer_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
@@ -222,31 +208,6 @@ export default function Index({ works, freelancers, filters, dateRange, debug }:
                         </form>
                     </CardContent>
                 </Card>
-                
-                {/* Debug Info */}
-                {debug && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Debug Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2 text-sm">
-                                <div><strong>Client ID:</strong> {debug.client_id}</div>
-                                <div><strong>Date Filter:</strong> {debug.date_filter}</div>
-                                <div><strong>Date Range:</strong> {debug.date_range}</div>
-                                <div><strong>Freelancer Filter:</strong> {debug.freelancer_filter || 'None'}</div>
-                                <div><strong>All Works:</strong> {debug.all_works}</div>
-                                <div><strong>All Contracts:</strong> {debug.all_contracts}</div>
-                                <div><strong>All Tasks (in range):</strong> {debug.all_tasks}</div>
-                                <div><strong>Works with Contracts:</strong> {debug.works_with_contracts}</div>
-                                <div><strong>Processed Works:</strong> {debug.processed_works}</div>
-                                <div><strong>Freelancers:</strong> {debug.freelancers_count}</div>
-                                <div><strong>Works Array Length:</strong> {works.length}</div>
-                                <div><strong>Freelancers Array Length:</strong> {freelancers.length}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
 
                 {/* Summary Cards */}
                 <div className="grid gap-4 md:grid-cols-4">

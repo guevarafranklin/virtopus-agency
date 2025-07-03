@@ -14,8 +14,6 @@ class PayrollController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::info('Starting admin payroll index');
-        
         // Get date range based on filter
         $dateRange = $this->getDateRange(
             $request->filter ?? 'current_week', 
@@ -23,23 +21,17 @@ class PayrollController extends Controller
             $request->end_date
         );
         
-        \Log::info('Date range: ' . $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'));
-        \Log::info('Filters received:', $request->all());
-        
-        // Get all contracts with relationships loaded first - NO FILTERING YET
+        // Get all contracts with relationships loaded first
         $allContracts = Contract::with(['work.user', 'user', 'tasks' => function($query) {
             $query->where('is_billable', true);
         }])->get();
         
-        \Log::info('All contracts found: ' . $allContracts->count());
-
-        // Apply user filters to the collection (not query)
+        // Apply user filters to the collection
         $filteredContracts = $allContracts;
         
         // Filter by freelancer if specified
         if ($request->freelancer_id) {
             $filteredContracts = $filteredContracts->where('user_id', $request->freelancer_id);
-            \Log::info('Contracts after freelancer filter: ' . $filteredContracts->count());
         }
 
         // Filter by client if specified
@@ -47,7 +39,6 @@ class PayrollController extends Controller
             $filteredContracts = $filteredContracts->filter(function($contract) use ($request) {
                 return $contract->work && $contract->work->user_id == $request->client_id;
             });
-            \Log::info('Contracts after client filter: ' . $filteredContracts->count());
         }
 
         // Process contracts and apply date filtering during processing
@@ -73,8 +64,6 @@ class PayrollController extends Controller
                 $totalEarnings = $totalHours * $freelancerRate;
                 $agencyEarnings = $totalHours * ($contract->work->rate * $contract->agency_rate / 100);
             }
-
-            \Log::info("Processing contract {$contract->id}: {$tasks->count()} tasks in date range, {$totalHours} hours");
 
             return [
                 'contract' => $contract,
@@ -103,10 +92,6 @@ class PayrollController extends Controller
         $freelancers = User::where('role', 'freelancer')->get();
         $clients = User::where('role', 'client')->get();
 
-        \Log::info('Final processed contracts: ' . $processedContracts->count());
-        \Log::info('Freelancers: ' . $freelancers->count());
-        \Log::info('Clients: ' . $clients->count());
-
         return Inertia::render('admin/payroll/Index', [
             'contracts' => $processedContracts,
             'freelancers' => $freelancers,
@@ -123,17 +108,6 @@ class PayrollController extends Controller
                 'end' => $dateRange['end']->format('Y-m-d'),
                 'label' => $this->getDateRangeLabel($request->filter ?? 'current_week'),
             ],
-            'debug' => [
-                'all_contracts' => $allContracts->count(),
-                'filtered_contracts' => $filteredContracts->count(),
-                'contracts_count' => $processedContracts->count(),
-                'freelancers_count' => $freelancers->count(),
-                'clients_count' => $clients->count(),
-                'date_filter' => $request->filter ?? 'current_week',
-                'date_range' => $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'),
-                'freelancer_filter' => $request->freelancer_id,
-                'client_filter' => $request->client_id,
-            ]
         ]);
     }
 
@@ -156,6 +130,8 @@ class PayrollController extends Controller
         $tasksQuery->whereBetween('start_time', [$dateRange['start'], $dateRange['end']]);
 
         $tasks = $tasksQuery->get();
+
+        // Calculate summary
         $totalHours = $tasks->sum('billable_hours');
         $freelancerRate = $contract->work->rate * (100 - $contract->agency_rate) / 100;
         

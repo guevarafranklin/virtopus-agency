@@ -5,100 +5,47 @@ namespace App\Http\Controllers\Freelancer;
 use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\Task;
-use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class EarningsController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::info('=== FREELANCER EARNINGS DEBUG START ===');
+        $freelancerId = auth()->id();
         
-        $user = auth()->user();
-        \Log::info('User ID: ' . $user->id);
-        \Log::info('User Role: ' . $user->role);
-        
-        // Check if user has contracts first
-        $userContractsCount = Contract::where('user_id', $user->id)->count();
-        \Log::info('Total contracts for user: ' . $userContractsCount);
-        
-        if ($userContractsCount === 0) {
-            \Log::info('No contracts found - returning empty data');
-            return Inertia::render('freelancer/earnings/Index', [
-                'contractEarnings' => [],
-                'contracts' => [],
-                'tasks' => [],
-                'summary' => [
-                    'total_hours' => 0,
-                    'total_earnings' => 0,
-                    'total_tasks' => 0,
-                    'avg_hourly_rate' => 0,
-                ],
-                'monthlyEarnings' => collect(range(1, 12))->map(function($month) {
-                    return [
-                        'month' => Carbon::create(null, $month, 1)->format('M'),
-                        'earnings' => 0
-                    ];
-                }),
-                'currentYear' => Carbon::now()->year,
-                'filters' => [
-                    'filter' => $request->filter ?? 'current_week',
-                    'contract_id' => $request->contract_id,
-                    'start_date' => $request->start_date,
-                    'end_date' => $request->end_date,
-                ],
-                'dateRange' => [
-                    'start' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                    'end' => Carbon::now()->endOfWeek()->format('Y-m-d'),
-                    'label' => 'Current Week',
-                ],
-                'debug' => [
-                    'message' => 'No contracts found for this freelancer',
-                    'user_id' => $user->id,
-                    'contracts_count' => 0,
-                ]
-            ]);
-        }
-        
-        // Get date range
+        // Get date range based on filter
         $dateRange = $this->getDateRange(
             $request->filter ?? 'current_week', 
             $request->start_date, 
             $request->end_date
         );
         
-        \Log::info('Date range: ' . $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'));
-        
-        // Get contracts with tasks - using simpler approach
+        // Get freelancer's contracts
         $contracts = Contract::with(['work.user'])
-            ->where('user_id', $user->id)
+            ->where('user_id', $freelancerId)
             ->get();
         
-        \Log::info('Contracts loaded: ' . $contracts->count());
-        
-        // Filter by contract if specified
+        // Filter by specific contract if requested
         if ($request->contract_id) {
             $contracts = $contracts->where('id', $request->contract_id);
-            \Log::info('After contract filter: ' . $contracts->count());
         }
         
-        // Get tasks separately for better performance
-        $tasksQuery = Task::with(['contract.work'])
-            ->whereIn('contract_id', $contracts->pluck('id'))
+        // Get all tasks for the freelancer in the date range
+        $allTasks = Task::whereIn('contract_id', $contracts->pluck('id'))
             ->where('is_billable', true)
-            ->whereBetween('start_time', [$dateRange['start'], $dateRange['end']]);
-            
-        $allTasks = $tasksQuery->get();
-        \Log::info('Tasks found: ' . $allTasks->count());
+            ->whereBetween('start_time', [$dateRange['start'], $dateRange['end']])
+            ->with('contract.work')
+            ->get();
         
-        // Process each contract
-        $contractEarnings = $contracts->map(function($contract) use ($allTasks, $dateRange) {
+        // Process contract earnings
+        $contractEarnings = $contracts->map(function($contract) use ($allTasks) {
             // Get tasks for this specific contract
             $contractTasks = $allTasks->where('contract_id', $contract->id);
-            
             $totalHours = $contractTasks->sum('billable_hours');
+            
+            // Calculate freelancer rate (what they earn after agency fee)
             $freelancerRate = $contract->work->rate * (100 - $contract->agency_rate) / 100;
             
             // Calculate earnings
@@ -107,8 +54,6 @@ class EarningsController extends Controller
             } else {
                 $earnings = $totalHours * $freelancerRate;
             }
-            
-            \Log::info("Contract {$contract->id}: {$contractTasks->count()} tasks, {$totalHours}h, \${$earnings}");
             
             return [
                 'contract' => $contract,
@@ -122,8 +67,6 @@ class EarningsController extends Controller
             // Show contracts with tasks or monthly contracts
             return $item['task_count'] > 0 || $item['contract_type'] === 'monthly';
         })->values();
-        
-        \Log::info('Final contract earnings: ' . $contractEarnings->count());
         
         // Calculate totals
         $totalHours = $contractEarnings->sum('total_hours');
@@ -159,8 +102,6 @@ class EarningsController extends Controller
             ]);
         }
         
-        \Log::info('=== FREELANCER EARNINGS DEBUG END ===');
-        
         return Inertia::render('freelancer/earnings/Index', [
             'contractEarnings' => $contractEarnings,
             'contracts' => $contracts, // All contracts for dropdown
@@ -184,16 +125,6 @@ class EarningsController extends Controller
                 'end' => $dateRange['end']->format('Y-m-d'),
                 'label' => $this->getDateRangeLabel($request->filter ?? 'current_week'),
             ],
-            'debug' => [
-                'user_id' => $user->id,
-                'total_contracts' => $contracts->count(),
-                'contracts_with_tasks' => $contractEarnings->count(),
-                'total_tasks' => $allTasks->count(),
-                'recent_tasks' => $recentTasks->count(),
-                'date_filter' => $request->filter ?? 'current_week',
-                'date_range' => $dateRange['start']->format('Y-m-d') . ' to ' . $dateRange['end']->format('Y-m-d'),
-                'contract_filter' => $request->contract_id,
-            ]
         ]);
     }
 
@@ -215,17 +146,17 @@ class EarningsController extends Controller
             case 'last_3_months':
                 return [
                     'start' => $now->copy()->subMonths(3)->startOfMonth(),
-                    'end' => $now->copy()->endOfMonth(),
+                    'end' => $now->copy()->subMonth()->endOfMonth(),
                 ];
             case 'all_time':
                 return [
-                    'start' => Carbon::create(2020, 1, 1),
+                    'start' => Carbon::parse('2020-01-01')->startOfDay(),
                     'end' => $now->copy()->endOfDay(),
                 ];
             case 'custom':
                 return [
-                    'start' => $customStart ? Carbon::parse($customStart) : $now->copy()->startOfWeek(),
-                    'end' => $customEnd ? Carbon::parse($customEnd) : $now->copy()->endOfWeek(),
+                    'start' => $customStart ? Carbon::parse($customStart)->startOfDay() : $now->startOfWeek(),
+                    'end' => $customEnd ? Carbon::parse($customEnd)->endOfDay() : $now->endOfWeek(),
                 ];
             case 'current_week':
             default:

@@ -42,26 +42,14 @@ interface Props {
         end: string;
         label: string;
     };
-    debug?: {
-        contracts_count?: number;
-        freelancers_count?: number;
-        clients_count?: number;
-        date_filter?: string;
-        date_range?: string;
-        freelancer_filter?: string;
-        client_filter?: string;
-    };
 }
 
-export default function Index({ contracts, freelancers, clients, filters, dateRange, debug }: Props) {
+export default function Index({ contracts, freelancers, clients, filters, dateRange }: Props) {
     const [dateFilter, setDateFilter] = useState(filters.filter || 'current_week');
     const [freelancerId, setFreelancerId] = useState(filters.freelancer_id || '');
     const [clientId, setClientId] = useState(filters.client_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
-
-    // Add console logging to see what data we're getting
-    console.log('Admin Payroll Props:', { contracts, freelancers, clients, filters, dateRange, debug });
 
     useEffect(() => {
         setDateFilter(filters.filter || 'current_week');
@@ -224,26 +212,6 @@ export default function Index({ contracts, freelancers, clients, filters, dateRa
                         </form>
                     </CardContent>
                 </Card>
-
-                {/* Debug Info */}
-                {debug && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Debug Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2 text-sm">
-                                <div><strong>Date Filter:</strong> {debug.date_filter}</div>
-                                <div><strong>Date Range:</strong> {debug.date_range}</div>
-                                <div><strong>Freelancer Filter:</strong> {debug.freelancer_filter || 'None'}</div>
-                                <div><strong>Client Filter:</strong> {debug.client_filter || 'None'}</div>
-                                <div><strong>Contracts:</strong> {debug.contracts_count}</div>
-                                <div><strong>Freelancers:</strong> {debug.freelancers_count}</div>
-                                <div><strong>Clients:</strong> {debug.clients_count}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
 
                 {/* Summary Cards */}
                 <div className="grid gap-4 md:grid-cols-4">
