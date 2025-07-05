@@ -62,16 +62,25 @@ export default function Index({ tasks }: Props) {
         setExpandedRows(newExpandedRows);
     };
 
-    // Custom formatting function that preserves the original time
+    // Fixed formatting function that preserves the original input time
     const formatTaskDateTime = (dateTimeString: string) => {
         if (!dateTimeString) return '';
         
         try {
-            // Parse the datetime string as is, without timezone conversion
-            const date = new Date(dateTimeString);
+            // Parse the ISO string and treat it as local time
+            const isoDate = new Date(dateTimeString);
             
-            // Format with local timezone (no conversion)
-            return date.toLocaleString('en-US', {
+            // Check if date is valid
+            if (isNaN(isoDate.getTime())) {
+                return 'Invalid Date';
+            }
+            
+            // Get the timezone offset and adjust to show the original input time
+            const userTimezoneOffset = isoDate.getTimezoneOffset();
+            const adjustedDate = new Date(isoDate.getTime() + (userTimezoneOffset * 60000));
+            
+            // Format without any timezone conversion
+            return adjustedDate.toLocaleString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',

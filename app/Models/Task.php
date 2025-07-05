@@ -28,18 +28,8 @@ class Task extends Model
         'billable_hours' => 'decimal:2',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'duration' => 'integer',
     ];
-
-    // Accessor to calculate the duration
-    public function getDurationAttribute()
-    {
-        if ($this->start_time && $this->end_time) {
-            $start = Carbon::parse($this->start_time);
-            $end = Carbon::parse($this->end_time);
-            return $end->diffForHumans($start, true); // Returns a human-readable duration
-        }
-        return null;
-    }
 
     public function contract()
     {
@@ -51,26 +41,18 @@ class Task extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Calculate billable hours from start and end time
-    public function calculateBillableHours()
-    {
-        if ($this->start_time && $this->end_time) {
-            $start = Carbon::parse($this->start_time);
-            $end = Carbon::parse($this->end_time);
-            return $end->diffInHours($start, true); // true for precise decimal hours
-        }
-        return 0;
-    }
-
-    // Get weekly hours for a specific contract and week
+    // Simplified and more reliable weekly hours calculation
     public static function getWeeklyHoursForContract($contractId, $weekStart = null)
     {
-        $weekStart = $weekStart ?: Carbon::now()->startOfWeek();
+        if (!$weekStart) {
+            $weekStart = Carbon::now()->startOfWeek();
+        }
+        
         $weekEnd = $weekStart->copy()->endOfWeek();
 
         return self::where('contract_id', $contractId)
             ->where('is_billable', true)
             ->whereBetween('start_time', [$weekStart, $weekEnd])
-            ->sum('billable_hours');
+            ->sum('billable_hours') ?? 0;
     }
 }

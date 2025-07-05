@@ -49,52 +49,114 @@ class TaskController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
             'status' => 'required|in:pending,in-progress,completed',
             'contract_id' => 'nullable|exists:contracts,id',
             'is_billable' => 'boolean',
         ]);
 
-        // Parse the datetime strings correctly
-        $startTime = Carbon::parse($validated['start_time']);
-        $endTime = Carbon::parse($validated['end_time']);
+        // Parse the datetime strings - they come in format 'Y-m-d\TH:i' from frontend
+        try {
+            $startTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_time']);
+            $endTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_time']);
+        } catch (\Exception $e) {
+            \Log::error('Date parsing error: ' . $e->getMessage(), [
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time']
+            ]);
+            
+            return back()->withErrors([
+                'start_time' => 'Invalid date format for start time.',
+                'end_time' => 'Invalid date format for end time.'
+            ]);
+        }
+
+        // Validate that end time is after start time
+        if ($endTime->lte($startTime)) {
+            return back()->withErrors([
+                'end_time' => 'End time must be after start time.'
+            ]);
+        }
         
-        // Calculate billable hours
+        // Calculate billable hours and duration
         $billableHours = $endTime->diffInHours($startTime, true);
+        $durationMinutes = $endTime->diffInMinutes($startTime);
         
         // Check weekly limit if billable and has contract
         if ($validated['is_billable'] && $validated['contract_id']) {
-            $contract = Contract::with('work')->find($validated['contract_id']);
-            
-            if ($contract) {
-                $weekStart = $startTime->copy()->startOfWeek();
-                $currentWeeklyHours = Task::getWeeklyHoursForContract($contract->id, $weekStart);
-                $weeklyLimit = $contract->work->weekly_time_limit;
+            try {
+                $contract = Contract::with('work')->find($validated['contract_id']);
+                
+                if ($contract && $contract->work) {
+                    $weekStart = $startTime->copy()->startOfWeek();
+                    
+                    // Get weekly hours more safely
+                    $currentWeeklyHours = Task::where('contract_id', $contract->id)
+                        ->where('is_billable', true)
+                        ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
+                        ->sum('billable_hours') ?? 0;
+                    
+                    $weeklyLimit = $contract->work->weekly_time_limit ?? 40; // Default to 40 if null
 
-                if (($currentWeeklyHours + $billableHours) > $weeklyLimit) {
-                    return back()->withErrors([
-                        'billable_hours' => "Adding {$billableHours} hours would exceed the weekly limit of {$weeklyLimit} hours. Current weekly hours: {$currentWeeklyHours}"
+                    \Log::info('Weekly limit check:', [
+                        'contract_id' => $contract->id,
+                        'current_weekly_hours' => $currentWeeklyHours,
+                        'new_task_hours' => $billableHours,
+                        'weekly_limit' => $weeklyLimit,
+                        'total_after_add' => $currentWeeklyHours + $billableHours
                     ]);
+
+                    if (($currentWeeklyHours + $billableHours) > $weeklyLimit) {
+                        return back()->withErrors([
+                            'is_billable' => "Adding {$billableHours} hours would exceed the weekly limit of {$weeklyLimit} hours. Current weekly hours: {$currentWeeklyHours}"
+                        ]);
+                    }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Weekly limit check failed: ' . $e->getMessage());
+                // Continue with task creation but log the error
             }
         }
         
-        // Create task with proper timezone handling - ADD user_id here
-        $task = Task::create([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'start_time' => $startTime->format('Y-m-d H:i:s'),
-            'end_time' => $endTime->format('Y-m-d H:i:s'),
-            'billable_hours' => $billableHours,
-            'status' => $validated['status'],
-            'contract_id' => $validated['contract_id'],
-            'is_billable' => $validated['is_billable'] ?? false,
-            'user_id' => auth()->id(), // This was missing!
-        ]);
+        // Create task with all required fields
+        try {
+            $taskData = [
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'duration' => $durationMinutes, // Add duration field
+                'billable_hours' => $validated['is_billable'] ? $billableHours : 0,
+                'status' => $validated['status'],
+                'contract_id' => $validated['contract_id'],
+                'is_billable' => $validated['is_billable'] ?? false,
+                'user_id' => auth()->id(),
+            ];
 
-        return redirect()->route('freelancer.task.index')
-            ->with('success', 'Task created successfully.');
+            \Log::info('Creating task with data:', $taskData);
+
+            $task = Task::create($taskData);
+
+            \Log::info('Task created successfully', [
+                'task_id' => $task->id,
+                'user_id' => auth()->id()
+            ]);
+
+            return redirect()->route('freelancer.task.index')
+                ->with('success', 'Task created successfully.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Task creation failed: ' . $e->getMessage(), [
+                'validated_data' => $validated,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors([
+                'error' => 'Failed to create task: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -138,44 +200,72 @@ class TaskController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
             'status' => 'required|in:pending,in-progress,completed',
             'contract_id' => 'nullable|exists:contracts,id',
             'is_billable' => 'boolean',
         ]);
 
-        $start = Carbon::parse($validated['start_time']);
-        $end = Carbon::parse($validated['end_time']);
-        $durationMinutes = $end->diffInMinutes($start);
-        $billableHours = $end->diffInHours($start, true);
+        // Parse the datetime strings
+        try {
+            $startTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_time']);
+            $endTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_time']);
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'start_time' => 'Invalid date format for start time.',
+                'end_time' => 'Invalid date format for end time.'
+            ]);
+        }
+
+        // Validate that end time is after start time
+        if ($endTime->lte($startTime)) {
+            return back()->withErrors([
+                'end_time' => 'End time must be after start time.'
+            ]);
+        }
+
+        $billableHours = $endTime->diffInHours($startTime, true);
+        $durationMinutes = $endTime->diffInMinutes($startTime);
 
         // Check weekly limit if billable and has contract
         if ($validated['is_billable'] && $validated['contract_id']) {
-            $contract = Contract::with('work')->find($validated['contract_id']);
-            
-            if ($contract) {
-                $weekStart = $start->copy()->startOfWeek();
-                $currentWeeklyHours = Task::getWeeklyHoursForContract($contract->id, $weekStart);
+            try {
+                $contract = Contract::with('work')->find($validated['contract_id']);
                 
-                // Subtract current task hours if it was already billable
-                if ($task->is_billable && $task->contract_id === $contract->id) {
-                    $currentWeeklyHours -= $task->billable_hours;
-                }
-                
-                $weeklyLimit = $contract->work->weekly_time_limit;
+                if ($contract && $contract->work) {
+                    $weekStart = $startTime->copy()->startOfWeek();
+                    
+                    // Get current weekly hours excluding this task
+                    $currentWeeklyHours = Task::where('contract_id', $contract->id)
+                        ->where('is_billable', true)
+                        ->where('id', '!=', $task->id) // Exclude current task
+                        ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
+                        ->sum('billable_hours') ?? 0;
+                    
+                    $weeklyLimit = $contract->work->weekly_time_limit ?? 40;
 
-                if (($currentWeeklyHours + $billableHours) > $weeklyLimit) {
-                    return back()->withErrors([
-                        'billable_hours' => "Adding {$billableHours} hours would exceed the weekly limit of {$weeklyLimit} hours. Current weekly hours: {$currentWeeklyHours}"
-                    ]);
+                    if (($currentWeeklyHours + $billableHours) > $weeklyLimit) {
+                        return back()->withErrors([
+                            'is_billable' => "Adding {$billableHours} hours would exceed the weekly limit of {$weeklyLimit} hours. Current weekly hours: {$currentWeeklyHours}"
+                        ]);
+                    }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Weekly limit check failed during update: ' . $e->getMessage());
             }
         }
 
-        $task->update($validated + [
+        $task->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'duration' => $durationMinutes,
             'billable_hours' => $validated['is_billable'] ? $billableHours : 0,
+            'status' => $validated['status'],
+            'contract_id' => $validated['contract_id'],
+            'is_billable' => $validated['is_billable'] ?? false,
         ]);
 
         return redirect()->route('freelancer.task.index')

@@ -45,10 +45,12 @@ export default function Create({ contracts }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Send data directly without additional wrapper
         post(route('freelancer.task.store'));
     };
 
-    const calculateDuration = (start: string, end: string) => {
+    const calculateDuration = (start: string, end: string): string => {
         if (!start || !end) return '0:00:00';
         
         const startTime = new Date(start);
@@ -64,13 +66,13 @@ export default function Create({ contracts }: Props) {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    // Fixed timezone handling
+    // Fixed timezone handling - keep everything in local time until submission
     const handleDateChange = (date: string) => {
         // Get current times or set defaults
-        const currentStartTime = data.start_time.split('T')[1] || '09:00:00';
-        const currentEndTime = data.end_time.split('T')[1] || '17:00:00';
+        const currentStartTime = data.start_time.split('T')[1] || '09:00';
+        const currentEndTime = data.end_time.split('T')[1] || '17:00';
         
-        // Create new datetime strings without timezone conversion
+        // Create new datetime strings in local format
         setData({
             ...data,
             start_time: `${date}T${currentStartTime}`,
@@ -80,22 +82,18 @@ export default function Create({ contracts }: Props) {
 
     const handleStartTimeChange = (time: string) => {
         const currentDate = data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
-        // Add seconds if not present
-        const timeWithSeconds = time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
-        setData('start_time', `${currentDate}T${timeWithSeconds}`);
+        setData('start_time', `${currentDate}T${time}`);
     };
 
     const handleEndTimeChange = (time: string) => {
         const currentDate = data.end_time.split('T')[0] || data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
-        // Add seconds if not present
-        const timeWithSeconds = time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
-        setData('end_time', `${currentDate}T${timeWithSeconds}`);
+        setData('end_time', `${currentDate}T${time}`);
     };
 
     const selectedContract = contracts.find(c => c.id === data.contract_id);
 
-    // Format display time without timezone conversion
-    const formatDisplayTime = (dateTimeString: string) => {
+    // Format display time preserving the input time
+    const formatDisplayTime = (dateTimeString: string): string => {
         if (!dateTimeString) return '';
         
         try {
@@ -103,7 +101,7 @@ export default function Create({ contracts }: Props) {
             if (!timePart) return '';
             
             const [hours, minutes] = timePart.split(':');
-            const hour = parseInt(hours);
+            const hour = parseInt(hours, 10);
             const ampm = hour >= 12 ? 'PM' : 'AM';
             const hour12 = hour % 12 || 12;
             return `${hour12}:${minutes} ${ampm}`;
@@ -113,12 +111,12 @@ export default function Create({ contracts }: Props) {
         }
     };
 
-    const formatDisplayDate = (dateTimeString: string) => {
+    const formatDisplayDate = (dateTimeString: string): string => {
         if (!dateTimeString) return '';
         
         try {
             const [datePart] = dateTimeString.split('T');
-            return new Date(datePart + 'T00:00:00').toLocaleDateString('en-US', {
+            return new Date(datePart + 'T12:00:00').toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
