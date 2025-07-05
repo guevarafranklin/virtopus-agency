@@ -14,12 +14,12 @@ class TaskController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $tasks = Task::with(['user', 'contract.work'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10); // Paginate with 10 items per page
 
         return Inertia::render('freelancer/task/Index', [
             'tasks' => $tasks

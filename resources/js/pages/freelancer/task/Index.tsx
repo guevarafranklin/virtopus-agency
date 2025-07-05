@@ -9,7 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 // Define the Task type with all required properties
@@ -35,8 +35,26 @@ interface Task {
     };
 }
 
+// Define pagination types
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedTasks {
+    data: Task[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+    links: PaginationLink[];
+}
+
 interface Props {
-    tasks: Task[];
+    tasks: PaginatedTasks;
 }
 
 export default function Index({ tasks }: Props) {
@@ -98,10 +116,21 @@ export default function Index({ tasks }: Props) {
         <AppLayout>
             <Head title="Tasks" />
             <div className="mt-8">
-                <Link className={buttonVariants({ variant: 'outline' })} href="/freelancer/task/create">
-                    Create Task
-                </Link>
-                <Table className="mt-4">
+                {/* Header with Create Button and Task Count */}
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Showing {tasks.from || 0} to {tasks.to || 0} of {tasks.total} tasks
+                        </p>
+                    </div>
+                    <Link className={buttonVariants({ variant: 'outline' })} href="/freelancer/task/create">
+                        Create Task
+                    </Link>
+                </div>
+
+                {/* Tasks Table */}
+                <Table className="mb-6">
                     <TableHeader>
                         <TableRow>
                             <TableHead></TableHead> {/* For expand button */}
@@ -114,7 +143,7 @@ export default function Index({ tasks }: Props) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {tasks.map((task) => (
+                        {tasks.data.map((task) => (
                             <>
                                 {/* Main Row */}
                                 <TableRow key={task.id}>
@@ -286,12 +315,100 @@ export default function Index({ tasks }: Props) {
                     </TableBody>
                 </Table>
 
-                {tasks.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                        <p>You haven't created any tasks yet.</p>
+                {/* Pagination Component */}
+                {tasks.last_page > 1 && (
+                    <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border rounded-lg">
+                        <div className="flex flex-1 justify-between sm:hidden">
+                            {/* Mobile pagination */}
+                            <Link
+                                href={tasks.links.find(link => link.label === '&laquo; Previous')?.url || '#'}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                                    tasks.current_page === 1
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                                preserveState
+                            >
+                                Previous
+                            </Link>
+                            <Link
+                                href={tasks.links.find(link => link.label === 'Next &raquo;')?.url || '#'}
+                                className={`relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                                    tasks.current_page === tasks.last_page
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                                preserveState
+                            >
+                                Next
+                            </Link>
+                        </div>
+                        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm text-gray-700">
+                                    Showing <span className="font-medium">{tasks.from}</span> to{' '}
+                                    <span className="font-medium">{tasks.to}</span> of{' '}
+                                    <span className="font-medium">{tasks.total}</span> results
+                                </p>
+                            </div>
+                            <div>
+                                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                    {/* Previous button */}
+                                    <Link
+                                        href={tasks.links.find(link => link.label === '&laquo; Previous')?.url || '#'}
+                                        className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                                            tasks.current_page === 1 ? 'cursor-not-allowed' : ''
+                                        }`}
+                                        preserveState
+                                    >
+                                        <span className="sr-only">Previous</span>
+                                        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                                    </Link>
+
+                                    {/* Page numbers */}
+                                    {tasks.links.slice(1, -1).map((link, index) => (
+                                        <Link
+                                            key={index}
+                                            href={link.url || '#'}
+                                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                                link.active
+                                                    ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                            }`}
+                                            preserveState
+                                        >
+                                            {link.label}
+                                        </Link>
+                                    ))}
+
+                                    {/* Next button */}
+                                    <Link
+                                        href={tasks.links.find(link => link.label === 'Next &raquo;')?.url || '#'}
+                                        className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                                            tasks.current_page === tasks.last_page ? 'cursor-not-allowed' : ''
+                                        }`}
+                                        preserveState
+                                    >
+                                        <span className="sr-only">Next</span>
+                                        <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                                    </Link>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Empty state */}
+                {tasks.data.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                        <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <Eye className="h-12 w-12 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
+                        <p className="text-gray-500 mb-6">You haven't created any tasks yet. Get started by creating your first task.</p>
                         <Link 
                             href="/freelancer/task/create"
-                            className={buttonVariants({ variant: 'default', className: 'mt-4' })}
+                            className={buttonVariants({ variant: 'default' })}
                         >
                             Create Your First Task
                         </Link>
