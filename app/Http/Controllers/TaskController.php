@@ -14,12 +14,12 @@ class TaskController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
         $tasks = Task::with(['user', 'contract.work'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
-            ->paginate(10); // Paginate with 10 items per page
+            ->paginate(15);
 
         return Inertia::render('freelancer/task/Index', [
             'tasks' => $tasks
@@ -31,7 +31,6 @@ class TaskController extends Controller
      */
     public function create()
     {
-        // Get contracts for the authenticated freelancer
         $contracts = Contract::with('work')
             ->where('user_id', auth()->id())
             ->get();
@@ -39,48 +38,6 @@ class TaskController extends Controller
         return Inertia::render('freelancer/task/Create', [
             'contracts' => $contracts
         ]);
-    }
-
-    /**
-     * Get weekly hours info for a contract
-     */
-    public function getWeeklyHours(Request $request)
-    {
-        $contractId = $request->get('contract_id');
-        $startTime = $request->get('start_time');
-        
-        if (!$contractId || !$startTime) {
-            return response()->json(['error' => 'Missing required parameters'], 400);
-        }
-
-        try {
-            $contract = Contract::with('work')->find($contractId);
-            
-            if (!$contract || !$contract->work) {
-                return response()->json(['error' => 'Contract not found'], 404);
-            }
-
-            $weekStart = Carbon::createFromFormat('Y-m-d\TH:i', $startTime)->startOfWeek();
-            
-            // Get current weekly hours
-            $currentWeeklyHours = Task::where('contract_id', $contract->id)
-                ->where('is_billable', true)
-                ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
-                ->sum('billable_hours') ?? 0;
-            
-            $weeklyLimit = $contract->work->weekly_time_limit ?? 40;
-            $remainingHours = max(0, $weeklyLimit - $currentWeeklyHours);
-
-            return response()->json([
-                'current_hours' => $currentWeeklyHours,
-                'weekly_limit' => $weeklyLimit,
-                'remaining_hours' => $remainingHours,
-                'week_start' => $weekStart->format('M j'),
-                'week_end' => $weekStart->copy()->endOfWeek()->format('M j, Y'),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to calculate weekly hours'], 500);
-        }
     }
 
     /**
@@ -98,7 +55,7 @@ class TaskController extends Controller
             'is_billable' => 'boolean',
         ]);
 
-        // Parse the datetime strings - they come in format 'Y-m-d\TH:i' from frontend
+        // Parse the datetime strings
         try {
             $startTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_time']);
             $endTime = Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_time']);
@@ -133,7 +90,6 @@ class TaskController extends Controller
                 if ($contract && $contract->work) {
                     $weekStart = $startTime->copy()->startOfWeek();
                     
-                    // Get weekly hours more safely
                     $currentWeeklyHours = Task::where('contract_id', $contract->id)
                         ->where('is_billable', true)
                         ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
@@ -143,15 +99,6 @@ class TaskController extends Controller
                     $remainingHours = max(0, $weeklyLimit - $currentWeeklyHours);
                     $totalAfterAdd = $currentWeeklyHours + $billableHours;
 
-                    \Log::info('Weekly limit check:', [
-                        'contract_id' => $contract->id,
-                        'current_weekly_hours' => $currentWeeklyHours,
-                        'new_task_hours' => $billableHours,
-                        'weekly_limit' => $weeklyLimit,
-                        'remaining_hours' => $remainingHours,
-                        'total_after_add' => $totalAfterAdd
-                    ]);
-
                     if ($totalAfterAdd > $weeklyLimit) {
                         return back()->withErrors([
                             'is_billable' => "❌ Weekly limit exceeded! You're trying to add {$billableHours} hours but only have {$remainingHours} hours remaining this week. Current: {$currentWeeklyHours}h / {$weeklyLimit}h (Week of {$weekStart->format('M j')} - {$weekStart->copy()->endOfWeek()->format('M j, Y')})"
@@ -160,11 +107,9 @@ class TaskController extends Controller
                 }
             } catch (\Exception $e) {
                 \Log::error('Weekly limit check failed: ' . $e->getMessage());
-                // Continue with task creation but log the error
             }
         }
         
-        // Create task with all required fields
         try {
             $taskData = [
                 'title' => $validated['title'],
@@ -179,14 +124,7 @@ class TaskController extends Controller
                 'user_id' => auth()->id(),
             ];
 
-            \Log::info('Creating task with data:', $taskData);
-
             $task = Task::create($taskData);
-
-            \Log::info('Task created successfully', [
-                'task_id' => $task->id,
-                'user_id' => auth()->id()
-            ]);
 
             return redirect()->route('freelancer.task.index')
                 ->with('success', 'Task created successfully.');
@@ -202,14 +140,6 @@ class TaskController extends Controller
                 'error' => 'Failed to create task: ' . $e->getMessage()
             ]);
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Task $task)
-    {
-        //
     }
 
     /**
@@ -330,5 +260,46 @@ class TaskController extends Controller
 
         return redirect()->route('freelancer.task.index')
             ->with('success', 'Task deleted successfully.');
+    }
+
+    /**
+     * Get weekly hours info for a contract
+     */
+    public function getWeeklyHours(Request $request)
+    {
+        $contractId = $request->get('contract_id');
+        $startTime = $request->get('start_time');
+        
+        if (!$contractId || !$startTime) {
+            return response()->json(['error' => 'Missing required parameters'], 400);
+        }
+
+        try {
+            $contract = Contract::with('work')->find($contractId);
+            
+            if (!$contract || !$contract->work) {
+                return response()->json(['error' => 'Contract not found'], 404);
+            }
+
+            $weekStart = Carbon::createFromFormat('Y-m-d\TH:i', $startTime)->startOfWeek();
+            
+            $currentWeeklyHours = Task::where('contract_id', $contract->id)
+                ->where('is_billable', true)
+                ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
+                ->sum('billable_hours') ?? 0;
+            
+            $weeklyLimit = $contract->work->weekly_time_limit ?? 40;
+            $remainingHours = max(0, $weeklyLimit - $currentWeeklyHours);
+
+            return response()->json([
+                'current_hours' => $currentWeeklyHours,
+                'weekly_limit' => $weeklyLimit,
+                'remaining_hours' => $remainingHours,
+                'week_start' => $weekStart->format('M j'),
+                'week_end' => $weekStart->copy()->endOfWeek()->format('M j, Y'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to calculate weekly hours'], 500);
+        }
     }
 }

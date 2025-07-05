@@ -9,7 +9,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 
@@ -113,13 +113,13 @@ export default function Index({ tasks }: Props) {
         }
     };
 
-    // To safely get pagination links
+    // Helper function to safely get pagination link
     const getPaginationLink = (label: string): string => {
         const link = tasks.links.find(link => link.label === label);
         return link?.url || '#';
     };
 
-    // To check if link is disabled
+    // Helper function to check if link is disabled
     const isLinkDisabled = (label: string): boolean => {
         if (label === '&laquo; Previous') return tasks.current_page === 1;
         if (label === 'Next &raquo;') return tasks.current_page === tasks.last_page;
@@ -221,6 +221,14 @@ export default function Index({ tasks }: Props) {
                                                 <Eye className="h-3 w-3" />
                                                 View Details
                                             </Button>
+                                            <Link
+                                                href={route('freelancer.task.edit', task.id)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition-colors duration-200"
+                                                aria-label={`Edit task ${task.title}`}
+                                            >
+                                                <Edit className="h-3 w-3" />
+                                                Edit
+                                            </Link>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -317,11 +325,22 @@ export default function Index({ tasks }: Props) {
                                                 </div>
                                             </div>
 
-                                            {/* Read-only notice */}
+                                            {/* Edit Action in Expanded Row */}
                                             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                                                <p className="text-sm text-blue-800">
-                                                    <strong>Note:</strong> Tasks are read-only once created. Contact your administrator if you need to make changes to this task.
-                                                </p>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-blue-800">
+                                                            <strong>Need to make changes?</strong> You can now edit your time inputs and task status.
+                                                        </p>
+                                                    </div>
+                                                    <Link
+                                                        href={route('freelancer.task.edit', task.id)}
+                                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                        Edit Task
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -391,7 +410,7 @@ export default function Index({ tasks }: Props) {
                                             href={link.url || '#'}
                                             className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                                                 link.active
-                                                    ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                                    ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                                                     : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                                             }`}
                                             preserveState

@@ -78,6 +78,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/earnings', [EarningsController::class, 'index'])->name('freelancer.earnings.index');
     });
 
+    // Freelancer-specific routes
+    Route::middleware(['auth', 'role:freelancer'])->prefix('freelancer')->name('freelancer.')->group(function () {
+        // Task routes
+        Route::resource('task', TaskController::class);
+        Route::get('/task/weekly-hours', [TaskController::class, 'getWeeklyHours'])->name('task.weekly-hours');
+    });
+
     // Admin routes
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         Route::resource('contract', ContractController::class)->names([
