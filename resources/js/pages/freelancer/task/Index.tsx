@@ -113,13 +113,13 @@ export default function Index({ tasks }: Props) {
         }
     };
 
-    // Helper function to safely get pagination link
+    // To safely get pagination links
     const getPaginationLink = (label: string): string => {
         const link = tasks.links.find(link => link.label === label);
         return link?.url || '#';
     };
 
-    // Helper function to check if link is disabled
+    // To check if link is disabled
     const isLinkDisabled = (label: string): boolean => {
         if (label === '&laquo; Previous') return tasks.current_page === 1;
         if (label === 'Next &raquo;') return tasks.current_page === tasks.last_page;
