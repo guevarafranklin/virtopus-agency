@@ -1,11 +1,12 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 // Define the Contract type
@@ -186,7 +187,17 @@ export default function Create({ contracts }: Props) {
         <AppLayout>
             <Head title="Create Task" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <h1 className="text-2xl font-bold mb-4">Create a New Task</h1>
+                {/* Header with back button */}
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold">Create a New Task</h1>
+                    <Link
+                        href={route('freelancer.task.index')}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Tasks
+                    </Link>
+                </div>
                 
                 {/* Weekly Hours Info */}
                 {data.is_billable && selectedContract && (
@@ -400,16 +411,24 @@ export default function Create({ contracts }: Props) {
                         <InputError message={errors.status} />
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-4 pt-4">
                         <Button 
                             type="submit" 
                             disabled={processing || !!wouldExceedLimit}
-                            className={wouldExceedLimit ? 'bg-red-500 hover:bg-red-600' : ''}
+                            className={`${wouldExceedLimit ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
                         >
                             {processing ? 'Creating Task...' : 
                              wouldExceedLimit ? '⚠️ Cannot Create - Exceeds Weekly Limit' : 
                              'Create Task'}
                         </Button>
+                        
+                        <Link
+                            href={route('freelancer.task.index')}
+                            className="inline-flex items-center justify-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors duration-200 disabled:opacity-50"
+                        >
+                            Cancel
+                        </Link>
                     </div>
                 </form>
             </div>
