@@ -11,6 +11,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import React from 'react';
 
 // Define the Task type with all required properties
 interface Task {
@@ -112,6 +113,19 @@ export default function Index({ tasks }: Props) {
         }
     };
 
+    // Helper function to safely get pagination link
+    const getPaginationLink = (label: string): string => {
+        const link = tasks.links.find(link => link.label === label);
+        return link?.url || '#';
+    };
+
+    // Helper function to check if link is disabled
+    const isLinkDisabled = (label: string): boolean => {
+        if (label === '&laquo; Previous') return tasks.current_page === 1;
+        if (label === 'Next &raquo;') return tasks.current_page === tasks.last_page;
+        return false;
+    };
+
     return (
         <AppLayout>
             <Head title="Tasks" />
@@ -144,15 +158,16 @@ export default function Index({ tasks }: Props) {
                     </TableHeader>
                     <TableBody>
                         {tasks.data.map((task) => (
-                            <>
+                            <React.Fragment key={task.id}>
                                 {/* Main Row */}
-                                <TableRow key={task.id}>
+                                <TableRow>
                                     <TableCell>
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => toggleRow(task.id)}
                                             className="p-1"
+                                            aria-label={`Toggle details for ${task.title}`}
                                         >
                                             {expandedRows.has(task.id) ? (
                                                 <ChevronUp className="h-4 w-4" />
@@ -201,6 +216,7 @@ export default function Index({ tasks }: Props) {
                                                 size="sm"
                                                 onClick={() => toggleRow(task.id)}
                                                 className="flex items-center gap-1"
+                                                aria-label={`View details for ${task.title}`}
                                             >
                                                 <Eye className="h-3 w-3" />
                                                 View Details
@@ -211,7 +227,7 @@ export default function Index({ tasks }: Props) {
 
                                 {/* Expanded Details Row */}
                                 {expandedRows.has(task.id) && (
-                                    <TableRow key={`expanded-${task.id}`} className="bg-gray-50">
+                                    <TableRow className="bg-gray-50">
                                         <TableCell colSpan={7} className="p-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 <div className="space-y-4">
@@ -310,7 +326,7 @@ export default function Index({ tasks }: Props) {
                                         </TableCell>
                                     </TableRow>
                                 )}
-                            </>
+                            </React.Fragment>
                         ))}
                     </TableBody>
                 </Table>
@@ -321,24 +337,26 @@ export default function Index({ tasks }: Props) {
                         <div className="flex flex-1 justify-between sm:hidden">
                             {/* Mobile pagination */}
                             <Link
-                                href={tasks.links.find(link => link.label === '&laquo; Previous')?.url || '#'}
+                                href={getPaginationLink('&laquo; Previous')}
                                 className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                                    tasks.current_page === 1
+                                    isLinkDisabled('&laquo; Previous')
                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                                 }`}
                                 preserveState
+                                aria-disabled={isLinkDisabled('&laquo; Previous')}
                             >
                                 Previous
                             </Link>
                             <Link
-                                href={tasks.links.find(link => link.label === 'Next &raquo;')?.url || '#'}
+                                href={getPaginationLink('Next &raquo;')}
                                 className={`relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                                    tasks.current_page === tasks.last_page
+                                    isLinkDisabled('Next &raquo;')
                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                                 }`}
                                 preserveState
+                                aria-disabled={isLinkDisabled('Next &raquo;')}
                             >
                                 Next
                             </Link>
@@ -355,11 +373,12 @@ export default function Index({ tasks }: Props) {
                                 <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                                     {/* Previous button */}
                                     <Link
-                                        href={tasks.links.find(link => link.label === '&laquo; Previous')?.url || '#'}
+                                        href={getPaginationLink('&laquo; Previous')}
                                         className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                                            tasks.current_page === 1 ? 'cursor-not-allowed' : ''
+                                            isLinkDisabled('&laquo; Previous') ? 'cursor-not-allowed' : ''
                                         }`}
                                         preserveState
+                                        aria-disabled={isLinkDisabled('&laquo; Previous')}
                                     >
                                         <span className="sr-only">Previous</span>
                                         <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -368,7 +387,7 @@ export default function Index({ tasks }: Props) {
                                     {/* Page numbers */}
                                     {tasks.links.slice(1, -1).map((link, index) => (
                                         <Link
-                                            key={index}
+                                            key={`page-${index}`}
                                             href={link.url || '#'}
                                             className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                                                 link.active
@@ -376,6 +395,7 @@ export default function Index({ tasks }: Props) {
                                                     : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                                             }`}
                                             preserveState
+                                            aria-current={link.active ? 'page' : undefined}
                                         >
                                             {link.label}
                                         </Link>
@@ -383,11 +403,12 @@ export default function Index({ tasks }: Props) {
 
                                     {/* Next button */}
                                     <Link
-                                        href={tasks.links.find(link => link.label === 'Next &raquo;')?.url || '#'}
+                                        href={getPaginationLink('Next &raquo;')}
                                         className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                                            tasks.current_page === tasks.last_page ? 'cursor-not-allowed' : ''
+                                            isLinkDisabled('Next &raquo;') ? 'cursor-not-allowed' : ''
                                         }`}
                                         preserveState
+                                        aria-disabled={isLinkDisabled('Next &raquo;')}
                                     >
                                         <span className="sr-only">Next</span>
                                         <ChevronRight className="h-5 w-5" aria-hidden="true" />
