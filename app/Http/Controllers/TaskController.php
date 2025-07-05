@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreTaskRequest;
-use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\Contract;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Carbon\Carbon;
 
 class TaskController extends Controller
@@ -57,18 +56,19 @@ class TaskController extends Controller
             'is_billable' => 'boolean',
         ]);
 
-        // Calculate duration and billable hours
-        $start = Carbon::parse($validated['start_time']);
-        $end = Carbon::parse($validated['end_time']);
-        $durationMinutes = $end->diffInMinutes($start);
-        $billableHours = $end->diffInHours($start, true);
-
+        // Parse the datetime strings correctly
+        $startTime = Carbon::parse($validated['start_time']);
+        $endTime = Carbon::parse($validated['end_time']);
+        
+        // Calculate billable hours
+        $billableHours = $endTime->diffInHours($startTime, true);
+        
         // Check weekly limit if billable and has contract
         if ($validated['is_billable'] && $validated['contract_id']) {
             $contract = Contract::with('work')->find($validated['contract_id']);
             
             if ($contract) {
-                $weekStart = $start->copy()->startOfWeek();
+                $weekStart = $startTime->copy()->startOfWeek();
                 $currentWeeklyHours = Task::getWeeklyHoursForContract($contract->id, $weekStart);
                 $weeklyLimit = $contract->work->weekly_time_limit;
 
@@ -79,11 +79,18 @@ class TaskController extends Controller
                 }
             }
         }
-
-        Task::create($validated + [
-            'duration' => $durationMinutes,
-            'billable_hours' => $validated['is_billable'] ? $billableHours : 0,
-            'user_id' => auth()->id(),
+        
+        // Create task with proper timezone handling - ADD user_id here
+        $task = Task::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'start_time' => $startTime->format('Y-m-d H:i:s'),
+            'end_time' => $endTime->format('Y-m-d H:i:s'),
+            'billable_hours' => $billableHours,
+            'status' => $validated['status'],
+            'contract_id' => $validated['contract_id'],
+            'is_billable' => $validated['is_billable'] ?? false,
+            'user_id' => auth()->id(), // This was missing!
         ]);
 
         return redirect()->route('freelancer.task.index')
@@ -121,7 +128,7 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTaskRequest $request, Task $task)
+    public function update(Request $request, Task $task)
     {
         // Ensure task belongs to authenticated user
         if ($task->user_id !== auth()->id()) {

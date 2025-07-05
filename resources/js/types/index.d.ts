@@ -69,39 +69,41 @@ export interface Task {
     description: string;
     start_time: string;
     end_time: string;
-    duration?: number;
+    billable_hours: number;
     status: string;
-    contract_id?: number;
     is_billable: boolean;
-    billable_hours?: number;
-    contract?: Contract;
-    user?: {
+    created_at: string;
+    updated_at: string;
+    user_id: number;
+    contract_id?: number;
+    contract?: {
         id: number;
-        name: string;
-        email: string;
+        work: {
+            title: string;
+            rate: number;
+            contract_type: string;
+            weekly_time_limit: number;
+        };
+        agency_rate: number;
     };
-    created_at: string;
-    updated_at: string;
-}
-
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    created_at: string;
-    updated_at: string;
 }
 
 export interface Contract {
     id: number;
+    work: {
+        title: string;
+        rate: number;
+        contract_type: string;
+        weekly_time_limit: number;
+        status: string;
+        user?: {
+            name: string;
+        };
+    };
     agency_rate: number;
-    work_id: number;
-    user_id: number;
-    work: Work;
-    user: User;
-    created_at: string;
-    updated_at: string;
+    user?: {
+        name: string;
+    };
 }
 
 // Add this to your types file (usually types/index.ts)

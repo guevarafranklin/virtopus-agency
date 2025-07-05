@@ -5,7 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Contract } from '@/types';
+
+// Define the Contract type
+interface Contract {
+    id: number;
+    work: {
+        title: string;
+        rate: number;
+        contract_type: string;
+        weekly_time_limit: number;
+    };
+    agency_rate: number;
+}
 
 type CreateTaskForm = {
     title: string;
@@ -22,7 +33,7 @@ interface Props {
 }
 
 export default function Create({ contracts }: Props) {
-    const { data, setData, post, errors, processing } = useForm<Required<CreateTaskForm>>({
+    const { data, setData, post, errors, processing } = useForm<CreateTaskForm>({
         title: '',
         description: '',
         start_time: '',
@@ -39,6 +50,7 @@ export default function Create({ contracts }: Props) {
 
     const calculateDuration = (start: string, end: string) => {
         if (!start || !end) return '0:00:00';
+        
         const startTime = new Date(start);
         const endTime = new Date(end);
         const duration = endTime.getTime() - startTime.getTime();
@@ -52,51 +64,70 @@ export default function Create({ contracts }: Props) {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const formatTime12Hour = (time24: string) => {
-        if (!time24) return '';
-        const [hours, minutes] = time24.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        return `${hour12}:${minutes} ${ampm}`;
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const convertTo24Hour = (time12: string) => {
-        if (!time12) return '';
-        const [time, ampm] = time12.split(' ');
-        const [hours, minutes] = time.split(':');
-        let hour = parseInt(hours);
-        
-        if (ampm === 'PM' && hour !== 12) hour += 12;
-        if (ampm === 'AM' && hour === 12) hour = 0;
-        
-        return `${hour.toString().padStart(2, '0')}:${minutes}`;
-    };
-
+    // Fixed timezone handling
     const handleDateChange = (date: string) => {
-        // Update both start_time and end_time with the new date
-        if (data.start_time) {
-            const currentStartTime = data.start_time.split('T')[1] || '09:00';
-            setData('start_time', `${date}T${currentStartTime}`);
-        }
-        if (data.end_time) {
-            const currentEndTime = data.end_time.split('T')[1] || '17:00';
-            setData('end_time', `${date}T${currentEndTime}`);
-        }
+        // Get current times or set defaults
+        const currentStartTime = data.start_time.split('T')[1] || '09:00:00';
+        const currentEndTime = data.end_time.split('T')[1] || '17:00:00';
+        
+        // Create new datetime strings without timezone conversion
+        setData({
+            ...data,
+            start_time: `${date}T${currentStartTime}`,
+            end_time: `${date}T${currentEndTime}`,
+        });
     };
 
     const handleStartTimeChange = (time: string) => {
         const currentDate = data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
-        setData('start_time', `${currentDate}T${time}`);
+        // Add seconds if not present
+        const timeWithSeconds = time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
+        setData('start_time', `${currentDate}T${timeWithSeconds}`);
     };
 
     const handleEndTimeChange = (time: string) => {
         const currentDate = data.end_time.split('T')[0] || data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
-        setData('end_time', `${currentDate}T${time}`);
+        // Add seconds if not present
+        const timeWithSeconds = time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
+        setData('end_time', `${currentDate}T${timeWithSeconds}`);
     };
 
     const selectedContract = contracts.find(c => c.id === data.contract_id);
+
+    // Format display time without timezone conversion
+    const formatDisplayTime = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        
+        try {
+            const [, timePart] = dateTimeString.split('T');
+            if (!timePart) return '';
+            
+            const [hours, minutes] = timePart.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        } catch (error) {
+            console.error('Error formatting display time:', error);
+            return '';
+        }
+    };
+
+    const formatDisplayDate = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        
+        try {
+            const [datePart] = dateTimeString.split('T');
+            return new Date(datePart + 'T00:00:00').toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('Error formatting display date:', error);
+            return '';
+        }
+    };
 
     return (
         <AppLayout>
@@ -212,7 +243,7 @@ export default function Create({ contracts }: Props) {
                                 <Input
                                     id="start_time"
                                     type="time"
-                                    value={data.start_time.split('T')[1] || ''}
+                                    value={data.start_time.split('T')[1]?.substring(0, 5) || ''}
                                     onChange={(e) => handleStartTimeChange(e.target.value)}
                                     className="w-full"
                                     required
@@ -228,7 +259,7 @@ export default function Create({ contracts }: Props) {
                                 <Input
                                     id="end_time"
                                     type="time"
-                                    value={data.end_time.split('T')[1] || ''}
+                                    value={data.end_time.split('T')[1]?.substring(0, 5) || ''}
                                     onChange={(e) => handleEndTimeChange(e.target.value)}
                                     className="w-full"
                                     required
@@ -249,7 +280,7 @@ export default function Create({ contracts }: Props) {
                         {/* Display formatted times */}
                         {data.start_time && data.end_time && (
                             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                <strong>Preview:</strong> {new Date(data.start_time).toLocaleDateString('en-US')} from {formatTime12Hour(data.start_time.split('T')[1])} to {formatTime12Hour(data.end_time.split('T')[1])}
+                                <strong>Preview:</strong> {formatDisplayDate(data.start_time)} from {formatDisplayTime(data.start_time)} to {formatDisplayTime(data.end_time)}
                             </div>
                         )}
                     </div>
@@ -273,7 +304,7 @@ export default function Create({ contracts }: Props) {
 
                     <div className="flex items-center gap-4">
                         <Button type="submit" disabled={processing}>
-                            Create Task
+                            {processing ? 'Creating Task...' : 'Create Task'}
                         </Button>
                     </div>
                 </form>

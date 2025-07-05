@@ -9,15 +9,41 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Task } from '@/types';
-import { formatDateTimeUS } from '@/lib/date-utils';
 import { ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Index({ tasks }: { tasks: Task[] }) {
+// Define the Task type with all required properties
+interface Task {
+    id: number;
+    title: string;
+    description: string;
+    start_time: string;
+    end_time: string;
+    billable_hours: number;
+    status: string;
+    is_billable: boolean;
+    created_at: string;
+    updated_at: string;
+    contract?: {
+        id: number;
+        work: {
+            title: string;
+            rate: number;
+            contract_type: string;
+        };
+        agency_rate: number;
+    };
+}
+
+interface Props {
+    tasks: Task[];
+}
+
+export default function Index({ tasks }: Props) {
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
     const limitText = (text: string) => {
+        if (!text) return '';
         const words = text.split(' ');
         if (words.length > 5) {
             return words.slice(0, 5).join(' ') + '...';
@@ -34,6 +60,29 @@ export default function Index({ tasks }: { tasks: Task[] }) {
             newExpandedRows.add(taskId);
         }
         setExpandedRows(newExpandedRows);
+    };
+
+    // Custom formatting function that preserves the original time
+    const formatTaskDateTime = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        
+        try {
+            // Parse the datetime string as is, without timezone conversion
+            const date = new Date(dateTimeString);
+            
+            // Format with local timezone (no conversion)
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error('Error formatting task date:', error);
+            return dateTimeString;
+        }
     };
 
     return (
@@ -124,7 +173,7 @@ export default function Index({ tasks }: { tasks: Task[] }) {
 
                                 {/* Expanded Details Row */}
                                 {expandedRows.has(task.id) && (
-                                    <TableRow className="bg-gray-50">
+                                    <TableRow key={`expanded-${task.id}`} className="bg-gray-50">
                                         <TableCell colSpan={7} className="p-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 <div className="space-y-4">
@@ -139,11 +188,11 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                                     </div>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Start Time</label>
-                                                        <p className="text-sm text-gray-800 mt-1">{formatDateTimeUS(task.start_time)}</p>
+                                                        <p className="text-sm text-gray-800 mt-1">{formatTaskDateTime(task.start_time)}</p>
                                                     </div>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">End Time</label>
-                                                        <p className="text-sm text-gray-800 mt-1">{formatDateTimeUS(task.end_time)}</p>
+                                                        <p className="text-sm text-gray-800 mt-1">{formatTaskDateTime(task.end_time)}</p>
                                                     </div>
                                                 </div>
 
@@ -155,7 +204,6 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                                                 <label className="text-sm font-medium text-gray-600">Contract</label>
                                                                 <p className="text-sm text-gray-800 mt-1">{task.contract.work.title}</p>
                                                             </div>
-                                                            {/* REMOVED: Client Rate - freelancers shouldn't see this */}
                                                             <div>
                                                                 <label className="text-sm font-medium text-gray-600">My Hourly Rate</label>
                                                                 <p className="text-sm text-green-600 font-medium mt-1">
@@ -192,11 +240,11 @@ export default function Index({ tasks }: { tasks: Task[] }) {
                                                     <h4 className="font-semibold text-gray-900 border-b pb-2">Additional Info</h4>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Created</label>
-                                                        <p className="text-sm text-gray-800 mt-1">{formatDateTimeUS(task.created_at)}</p>
+                                                        <p className="text-sm text-gray-800 mt-1">{formatTaskDateTime(task.created_at)}</p>
                                                     </div>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Last Updated</label>
-                                                        <p className="text-sm text-gray-800 mt-1">{formatDateTimeUS(task.updated_at)}</p>
+                                                        <p className="text-sm text-gray-800 mt-1">{formatTaskDateTime(task.updated_at)}</p>
                                                     </div>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Task ID</label>

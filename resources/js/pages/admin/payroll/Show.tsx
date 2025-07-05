@@ -11,7 +11,6 @@ import {
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Contract, Task } from '@/types';
-import { formatDateTimeUS } from '@/lib/date-utils';
 
 interface Props {
     contract: Contract;
@@ -38,6 +37,30 @@ interface Props {
 }
 
 export default function Show({ contract, tasks, summary, filters, dateRange }: Props) {
+    const formatDateTimeUS = (dateString: string | Date): string => {
+        if (!dateString) return '';
+        
+        try {
+            const date = new Date(dateString);
+            
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+            
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid Date';
+        }
+    };
+
     return (
         <AppLayout>
             <Head title={`Payroll - ${contract.work.title}`} />
@@ -66,7 +89,7 @@ export default function Show({ contract, tasks, summary, filters, dateRange }: P
                         <CardContent className="space-y-2">
                             <div><strong>Project:</strong> {contract.work.title}</div>
                             <div><strong>Client:</strong> {contract.work.user?.name || 'N/A'}</div>
-                            <div><strong>Freelancer:</strong> {contract.user.name}</div>
+                            <div><strong>Freelancer:</strong> {contract.user?.name || 'N/A'}</div>
                             <div><strong>Type:</strong> {contract.work.contract_type}</div>
                             <div><strong>Rate:</strong> ${contract.work.rate}/{contract.work.contract_type === 'hourly' ? 'hr' : 'month'}</div>
                             <div><strong>Agency Rate:</strong> {contract.agency_rate}%</div>
@@ -145,7 +168,7 @@ export default function Show({ contract, tasks, summary, filters, dateRange }: P
                                             <TableCell>{task.description || 'N/A'}</TableCell>
                                             <TableCell>{formatDateTimeUS(task.start_time)}</TableCell>
                                             <TableCell>{formatDateTimeUS(task.end_time)}</TableCell>
-                                            <TableCell className="text-right">{task.billable_hours}h</TableCell>
+                                            <TableCell className="text-right">{task.billable_hours || 0}h</TableCell>
                                             <TableCell>
                                                 <span className={`px-2 py-1 rounded-full text-xs ${
                                                     task.status === 'completed' ? 'bg-green-100 text-green-800' :
