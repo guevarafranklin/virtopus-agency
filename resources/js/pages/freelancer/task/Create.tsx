@@ -38,13 +38,62 @@ export default function Create({ contracts }: Props) {
     };
 
     const calculateDuration = (start: string, end: string) => {
-        if (!start || !end) return 'N/A';
+        if (!start || !end) return '0:00:00';
         const startTime = new Date(start);
         const endTime = new Date(end);
         const duration = endTime.getTime() - startTime.getTime();
+        
+        if (duration <= 0) return '0:00:00';
+        
         const hours = Math.floor(duration / (1000 * 60 * 60));
-        const minutes = Math.round((duration % (1000 * 60 * 60)) / (1000 * 60));
-        return `${hours}h ${minutes}m`;
+        const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((duration % (1000 * 60)) / 1000);
+        
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const formatTime12Hour = (time24: string) => {
+        if (!time24) return '';
+        const [hours, minutes] = time24.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const convertTo24Hour = (time12: string) => {
+        if (!time12) return '';
+        const [time, ampm] = time12.split(' ');
+        const [hours, minutes] = time.split(':');
+        let hour = parseInt(hours);
+        
+        if (ampm === 'PM' && hour !== 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+        
+        return `${hour.toString().padStart(2, '0')}:${minutes}`;
+    };
+
+    const handleDateChange = (date: string) => {
+        // Update both start_time and end_time with the new date
+        if (data.start_time) {
+            const currentStartTime = data.start_time.split('T')[1] || '09:00';
+            setData('start_time', `${date}T${currentStartTime}`);
+        }
+        if (data.end_time) {
+            const currentEndTime = data.end_time.split('T')[1] || '17:00';
+            setData('end_time', `${date}T${currentEndTime}`);
+        }
+    };
+
+    const handleStartTimeChange = (time: string) => {
+        const currentDate = data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
+        setData('start_time', `${currentDate}T${time}`);
+    };
+
+    const handleEndTimeChange = (time: string) => {
+        const currentDate = data.end_time.split('T')[0] || data.start_time.split('T')[0] || new Date().toISOString().split('T')[0];
+        setData('end_time', `${currentDate}T${time}`);
     };
 
     const selectedContract = contracts.find(c => c.id === data.contract_id);
@@ -138,49 +187,71 @@ export default function Create({ contracts }: Props) {
                         <InputError message={errors.is_billable} />
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="start_time">Start Time</Label>
-                        <Input
-                            id="start_time"
-                            name="start_time"
-                            type="datetime-local"
-                            value={data.start_time}
-                            onChange={(e) => setData('start_time', e.target.value)}
-                            className="mt-1 block w-full"
-                            required
-                        />
-                        <p className="text-sm text-gray-500">
-                            Time will display in US format (MM/DD/YYYY, 12-hour clock)
-                        </p>
-                        <InputError message={errors.start_time} />
-                    </div>
+                    {/* Simplified Date/Time Section */}
+                    <div className="grid gap-4">
+                        <Label className="text-base font-semibold">Task Schedule</Label>
+                        
+                        {/* Date Selection */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="task_date">Date</Label>
+                            <Input
+                                id="task_date"
+                                type="date"
+                                value={data.start_time.split('T')[0] || ''}
+                                onChange={(e) => handleDateChange(e.target.value)}
+                                className="w-full"
+                                required
+                            />
+                            <InputError message={errors.start_time} />
+                        </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="end_time">End Time</Label>
-                        <Input
-                            id="end_time"
-                            name="end_time"
-                            type="datetime-local"
-                            value={data.end_time}
-                            onChange={(e) => setData('end_time', e.target.value)}
-                            className="mt-1 block w-full"
-                            required
-                        />
-                        <p className="text-sm text-gray-500">
-                            Time will display in US format (MM/DD/YYYY, 12-hour clock)
-                        </p>
-                        <InputError message={errors.end_time} />
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="duration">Duration</Label>
-                        <Input
-                            id="duration"
-                            name="duration"
-                            value={calculateDuration(data.start_time, data.end_time)}
-                            className="mt-1 block w-full"
-                            readOnly
-                        />
+                        {/* Time Selection Row */}
+                        <div className="grid grid-cols-4 gap-4 items-end">
+                            <div className="grid gap-2">
+                                <Label htmlFor="start_time">Start Time</Label>
+                                <Input
+                                    id="start_time"
+                                    type="time"
+                                    value={data.start_time.split('T')[1] || ''}
+                                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                                    className="w-full"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="flex items-center justify-center pb-2">
+                                <span className="text-gray-500">→</span>
+                            </div>
+                            
+                            <div className="grid gap-2">
+                                <Label htmlFor="end_time">End Time</Label>
+                                <Input
+                                    id="end_time"
+                                    type="time"
+                                    value={data.end_time.split('T')[1] || ''}
+                                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                                    className="w-full"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="grid gap-2">
+                                <Label htmlFor="duration">Duration</Label>
+                                <Input
+                                    id="duration"
+                                    value={calculateDuration(data.start_time, data.end_time)}
+                                    className="w-full font-mono text-center"
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Display formatted times */}
+                        {data.start_time && data.end_time && (
+                            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                                <strong>Preview:</strong> {new Date(data.start_time).toLocaleDateString('en-US')} from {formatTime12Hour(data.start_time.split('T')[1])} to {formatTime12Hour(data.end_time.split('T')[1])}
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid gap-2">
