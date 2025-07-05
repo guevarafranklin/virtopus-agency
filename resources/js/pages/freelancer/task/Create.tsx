@@ -90,6 +90,16 @@ export default function Create({ contracts }: Props) {
         return duration / (1000 * 60 * 60); // Convert to hours
     };
 
+    // Automatically set billable status when contract changes
+    const handleContractChange = (contractId: string) => {
+        const contractIdNumber = contractId ? Number(contractId) : null;
+        setData({
+            ...data,
+            contract_id: contractIdNumber,
+            is_billable: contractIdNumber !== null, // Automatically set to true if contract is selected
+        });
+    };
+
     // Fetch weekly hours when contract or date changes
     useEffect(() => {
         const fetchWeeklyHours = async () => {
@@ -199,7 +209,7 @@ export default function Create({ contracts }: Props) {
                     </Link>
                 </div>
                 
-                {/* Weekly Hours Info */}
+                {/* Weekly Hours Info - Only show for billable tasks */}
                 {data.is_billable && selectedContract && (
                     <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
                         <p className="text-sm text-blue-800">
@@ -284,42 +294,54 @@ export default function Create({ contracts }: Props) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="contract_id">Contract (Optional)</Label>
+                        <Label htmlFor="contract_id">Contract</Label>
                         <select
                             id="contract_id"
                             name="contract_id"
                             value={data.contract_id || ''}
-                            onChange={(e) => setData('contract_id', e.target.value ? Number(e.target.value) : null)}
+                            onChange={(e) => handleContractChange(e.target.value)}
                             className="mt-1 block w-full border rounded-md p-2"
                         >
-                            <option value="">No Contract (Non-billable)</option>
+                            <option value="">No Contract (Non-billable task)</option>
                             {contracts.map((contract) => (
                                 <option key={contract.id} value={contract.id}>
                                     {contract.work.title} - ${((contract.work.rate * (100 - contract.agency_rate)) / 100).toFixed(2)}/{contract.work.contract_type === 'hourly' ? 'hr' : 'month'}
                                 </option>
                             ))}
                         </select>
+                        <p className="text-sm text-gray-600">
+                            {data.contract_id ? (
+                                <span className="text-green-600">
+                                    ✓ This task will be automatically billable under the selected contract
+                                </span>
+                            ) : (
+                                <span className="text-gray-500">
+                                    Select a contract to make this task billable and track earnings
+                                </span>
+                            )}
+                        </p>
                         <InputError message={errors.contract_id} />
                     </div>
 
+                    {/* Billing Status Display (Read-only) */}
                     <div className="grid gap-2">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                id="is_billable"
-                                checked={data.is_billable}
-                                onChange={(e) => setData('is_billable', e.target.checked)}
-                                disabled={!data.contract_id}
-                                className="rounded"
-                            />
-                            <Label htmlFor="is_billable">Make this task billable</Label>
+                        <Label htmlFor="billing_status">Billing Status</Label>
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md border">
+                            <div className={`w-3 h-3 rounded-full ${data.is_billable ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className={`text-sm font-medium ${data.is_billable ? 'text-green-700' : 'text-gray-600'}`}>
+                                {data.is_billable ? 'Billable Task' : 'Non-billable Task'}
+                            </span>
+                            {data.is_billable && (
+                                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                    Will count towards earnings
+                                </span>
+                            )}
                         </div>
-                        {!data.contract_id && (
-                            <p className="text-sm text-gray-500">
-                                Select a contract to make this task billable
+                        {data.is_billable && (
+                            <p className="text-xs text-green-600">
+                                This task will be tracked for billing and count towards your earnings from the selected contract.
                             </p>
                         )}
-                        <InputError message={errors.is_billable} />
                     </div>
 
                     {/* Simplified Date/Time Section */}
@@ -388,6 +410,11 @@ export default function Create({ contracts }: Props) {
                                 {data.is_billable && (
                                     <span className="block mt-1">
                                         <strong>Billable Hours:</strong> {taskHours.toFixed(1)}h
+                                        {selectedContract && (
+                                            <span className="text-green-600">
+                                                {' '}(${(taskHours * ((selectedContract.work.rate * (100 - selectedContract.agency_rate)) / 100)).toFixed(2)} estimated earnings)
+                                            </span>
+                                        )}
                                     </span>
                                 )}
                             </div>
