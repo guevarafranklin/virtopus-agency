@@ -42,6 +42,48 @@ class TaskController extends Controller
     }
 
     /**
+     * Get weekly hours info for a contract
+     */
+    public function getWeeklyHours(Request $request)
+    {
+        $contractId = $request->get('contract_id');
+        $startTime = $request->get('start_time');
+        
+        if (!$contractId || !$startTime) {
+            return response()->json(['error' => 'Missing required parameters'], 400);
+        }
+
+        try {
+            $contract = Contract::with('work')->find($contractId);
+            
+            if (!$contract || !$contract->work) {
+                return response()->json(['error' => 'Contract not found'], 404);
+            }
+
+            $weekStart = Carbon::createFromFormat('Y-m-d\TH:i', $startTime)->startOfWeek();
+            
+            // Get current weekly hours
+            $currentWeeklyHours = Task::where('contract_id', $contract->id)
+                ->where('is_billable', true)
+                ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
+                ->sum('billable_hours') ?? 0;
+            
+            $weeklyLimit = $contract->work->weekly_time_limit ?? 40;
+            $remainingHours = max(0, $weeklyLimit - $currentWeeklyHours);
+
+            return response()->json([
+                'current_hours' => $currentWeeklyHours,
+                'weekly_limit' => $weeklyLimit,
+                'remaining_hours' => $remainingHours,
+                'week_start' => $weekStart->format('M j'),
+                'week_end' => $weekStart->copy()->endOfWeek()->format('M j, Y'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to calculate weekly hours'], 500);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -97,19 +139,22 @@ class TaskController extends Controller
                         ->whereBetween('start_time', [$weekStart, $weekStart->copy()->endOfWeek()])
                         ->sum('billable_hours') ?? 0;
                     
-                    $weeklyLimit = $contract->work->weekly_time_limit ?? 40; // Default to 40 if null
+                    $weeklyLimit = $contract->work->weekly_time_limit ?? 40;
+                    $remainingHours = max(0, $weeklyLimit - $currentWeeklyHours);
+                    $totalAfterAdd = $currentWeeklyHours + $billableHours;
 
                     \Log::info('Weekly limit check:', [
                         'contract_id' => $contract->id,
                         'current_weekly_hours' => $currentWeeklyHours,
                         'new_task_hours' => $billableHours,
                         'weekly_limit' => $weeklyLimit,
-                        'total_after_add' => $currentWeeklyHours + $billableHours
+                        'remaining_hours' => $remainingHours,
+                        'total_after_add' => $totalAfterAdd
                     ]);
 
-                    if (($currentWeeklyHours + $billableHours) > $weeklyLimit) {
+                    if ($totalAfterAdd > $weeklyLimit) {
                         return back()->withErrors([
-                            'is_billable' => "Adding {$billableHours} hours would exceed the weekly limit of {$weeklyLimit} hours. Current weekly hours: {$currentWeeklyHours}"
+                            'is_billable' => "❌ Weekly limit exceeded! You're trying to add {$billableHours} hours but only have {$remainingHours} hours remaining this week. Current: {$currentWeeklyHours}h / {$weeklyLimit}h (Week of {$weekStart->format('M j')} - {$weekStart->copy()->endOfWeek()->format('M j, Y')})"
                         ]);
                     }
                 }
@@ -126,7 +171,7 @@ class TaskController extends Controller
                 'description' => $validated['description'],
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-                'duration' => $durationMinutes, // Add duration field
+                'duration' => $durationMinutes,
                 'billable_hours' => $validated['is_billable'] ? $billableHours : 0,
                 'status' => $validated['status'],
                 'contract_id' => $validated['contract_id'],
