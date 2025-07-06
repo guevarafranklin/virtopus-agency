@@ -15,7 +15,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatDateUS } from '@/lib/date-utils';
 import { Search, FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
 interface Props {
@@ -41,31 +41,44 @@ export default function Index({ contracts, filters }: Props) {
     }, 300);
 
     // Handle search input changes
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
         debouncedSearch(value);
-    };
+    }, [debouncedSearch]);
 
     // Clear search
-    const clearSearch = () => {
+    const clearSearch = useCallback(() => {
         setSearch('');
         router.get(route('admin.contract.index'), {}, {
             preserveState: true,
             preserveScroll: true,
             replace: true
         });
-    };
+    }, []);
 
     // Delete action
-    const deleteContract = (id: number) => {
+    const deleteContract = useCallback((id: number) => {
         if (confirm('Are you sure you want to delete this contract?')) {
             router.delete(route('admin.contract.destroy', { id }), {
                 onSuccess: () => toast.success('Contract deleted successfully'),
                 onError: () => toast.error('Failed to delete the contract'),
             });
         }
-    };
+    }, []);
+
+    // Handle pagination navigation
+    const handlePrevious = useCallback(() => {
+        if (contracts.prev_page_url) {
+            router.get(contracts.prev_page_url, { search }, { preserveState: true });
+        }
+    }, [contracts.prev_page_url, search]);
+
+    const handleNext = useCallback(() => {
+        if (contracts.next_page_url) {
+            router.get(contracts.next_page_url, { search }, { preserveState: true });
+        }
+    }, [contracts.next_page_url, search]);
 
     return (
         <AppLayout>
@@ -149,14 +162,14 @@ export default function Index({ contracts, filters }: Props) {
                                             <TableRow key={contract.id}>
                                                 <TableCell className="font-medium">
                                                     <Link
-                                                        href={route('admin.contract.show', contract.id)}
-                                                        className="text-blue-600 hover:underline"
+                                                        href={route('admin.contract.edit', { id: contract.id })}
+                                                        className="text-blue-600 hover:underline hover:text-blue-800 transition-colors duration-200"
                                                     >
                                                         {contract.work.title}
                                                     </Link>
                                                 </TableCell>
                                                 <TableCell>{contract.work.user?.name || 'N/A'}</TableCell>
-                                                <TableCell>{contract.user.name}</TableCell>
+                                                <TableCell>{contract.user?.name || 'N/A'}</TableCell>
                                                 <TableCell className="text-right">{contract.agency_rate}%</TableCell>
                                                 <TableCell className="capitalize">{contract.work.contract_type}</TableCell>
                                                 <TableCell className="text-right">
@@ -176,20 +189,22 @@ export default function Index({ contracts, filters }: Props) {
                                                 <TableCell className="text-right text-sm text-gray-500">
                                                     {formatDateUS(contract.created_at)}
                                                 </TableCell>
-                                                <TableCell className="flex flex-row gap-x-2 justify-end">
-                                                    <Link
-                                                        href={route('admin.contract.edit', { id: contract.id })}
-                                                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => deleteContract(contract.id)}
-                                                    >
-                                                        Delete
-                                                    </Button>
+                                                <TableCell>
+                                                    <div className="flex flex-row gap-x-2 justify-end">
+                                                        <Link
+                                                            href={route('admin.contract.edit', { id: contract.id })}
+                                                            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                                                        >
+                                                            Edit
+                                                        </Link>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => deleteContract(contract.id)}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -207,7 +222,7 @@ export default function Index({ contracts, filters }: Props) {
                                                 variant="outline"
                                                 size="sm"
                                                 disabled={!contracts.prev_page_url}
-                                                onClick={() => router.get(contracts.prev_page_url!, { search }, { preserveState: true })}
+                                                onClick={handlePrevious}
                                             >
                                                 <ChevronLeft className="h-4 w-4" />
                                                 Previous
@@ -221,7 +236,7 @@ export default function Index({ contracts, filters }: Props) {
                                                 variant="outline"
                                                 size="sm"
                                                 disabled={!contracts.next_page_url}
-                                                onClick={() => router.get(contracts.next_page_url!, { search }, { preserveState: true })}
+                                                onClick={handleNext}
                                             >
                                                 Next
                                                 <ChevronRight className="h-4 w-4" />
@@ -237,7 +252,7 @@ export default function Index({ contracts, filters }: Props) {
                                     <>
                                         <p className="text-lg font-medium">No contracts found</p>
                                         <p className="text-sm mt-2">
-                                            No contracts match "{search}". Try adjusting your search.
+                                            No contracts match &quot;{search}&quot;. Try adjusting your search.
                                         </p>
                                         <div className="mt-4">
                                             <Button onClick={clearSearch} variant="outline">

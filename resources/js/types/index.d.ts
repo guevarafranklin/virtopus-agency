@@ -89,6 +89,7 @@ export interface Task {
 }
 
 export interface Contract {
+    created_at: string | Date;
     id: number;
     work: {
         title: string;
