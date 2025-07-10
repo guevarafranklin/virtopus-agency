@@ -19,7 +19,7 @@ class TaskController extends Controller
         $tasks = Task::with(['user', 'contract.work'])
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(12); // Changed from 15 to 12
 
         return Inertia::render('freelancer/task/Index', [
             'tasks' => $tasks
