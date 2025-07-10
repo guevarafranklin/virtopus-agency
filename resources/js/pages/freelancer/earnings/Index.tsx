@@ -1,5 +1,9 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
+import { Head,  router } from '@inertiajs/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Table,
     TableBody,
@@ -7,26 +11,25 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from '@/components/ui/table';
 import { DollarSign, Clock, FileText, TrendingUp } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { formatDateTimeUS } from '@/lib/date-utils';
 
-interface ContractEarnings {
-    contract: {
-        id: number;
-        work: {
-            title: string;
-            contract_type: string;
-            user: {
-                name: string;
-            };
+interface Contract {
+    id: number;
+    work: {
+        title: string;
+        user: {
+            name: string;
         };
     };
+}
+
+interface ContractEarning {
+    contract: Contract;
+    client_name: string;
+    project_title: string;
     total_hours: number;
     task_count: number;
     freelancer_rate: number;
@@ -37,7 +40,6 @@ interface ContractEarnings {
 interface Task {
     id: number;
     title: string;
-    description?: string;
     start_time: string;
     end_time: string;
     billable_hours: number;
@@ -52,35 +54,27 @@ interface Task {
     };
 }
 
-interface Contract {
-    id: number;
-    work: {
-        title: string;
-        user: {
-            name: string;
-        };
-    };
-}
-
 interface MonthlyEarning {
     month: string;
     earnings: number;
 }
 
+interface Summary {
+    total_hours: number;
+    total_earnings: number;
+    total_tasks: number;
+    avg_hourly_rate: number;
+}
+
 interface Props {
-    contractEarnings: ContractEarnings[];
+    contractEarnings: ContractEarning[];
     contracts: Contract[];
     tasks: Task[];
-    summary: {
-        total_hours: number;
-        total_earnings: number;
-        total_tasks: number;
-        avg_hourly_rate: number;
-    };
+    summary: Summary;
     monthlyEarnings: MonthlyEarning[];
     currentYear: number;
     filters: {
-        filter: string;
+        filter?: string;
         contract_id?: string;
         start_date?: string;
         end_date?: string;
@@ -101,30 +95,19 @@ export default function Index({
     currentYear,
     filters, 
     dateRange
- }: Props) {
+}: Props) {
     const [dateFilter, setDateFilter] = useState(filters.filter || 'current_week');
     const [contractId, setContractId] = useState(filters.contract_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
 
-    useEffect(() => {
-        setDateFilter(filters.filter || 'current_week');
-        setContractId(filters.contract_id || '');
-        setStartDate(filters.start_date || '');
-        setEndDate(filters.end_date || '');
-    }, [filters]);
-
-    const handleFilter = (e: React.FormEvent) => {
+    const handleFilter = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         
-        const params: Record<string, string> = {
-            filter: dateFilter,
-        };
-
-        if (contractId) {
-            params.contract_id = contractId;
-        }
-
+        const params: Record<string, string> = { filter: dateFilter };
+        
+        if (contractId) params.contract_id = contractId;
+        
         if (dateFilter === 'custom') {
             if (startDate) params.start_date = startDate;
             if (endDate) params.end_date = endDate;
@@ -134,9 +117,9 @@ export default function Index({
             preserveState: true,
             preserveScroll: true,
         });
-    };
+    }, [dateFilter, contractId, startDate, endDate]);
 
-    const clearFilters = () => {
+    const clearFilters = useCallback(() => {
         setDateFilter('current_week');
         setContractId('');
         setStartDate('');
@@ -146,33 +129,36 @@ export default function Index({
             preserveState: true,
             preserveScroll: true,
         });
-    };
+    }, []);
 
-    const showAllEarnings = () => {
+    const showAllEarnings = useCallback(() => {
         router.get(route('freelancer.earnings.index'), { filter: 'all_time' }, {
             preserveState: true,
             preserveScroll: true,
         });
-    };
+    }, []);
 
     return (
         <AppLayout>
             <Head title="My Earnings" />
-            <div className="mt-8 space-y-6">
+            
+            <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold">My Earnings</h1>
-                    <div className="text-sm text-gray-600">
-                        {dateRange.label}: {dateRange.start} - {dateRange.end}
+                    <div>
+                        <h1 className="text-3xl font-bold">My Earnings</h1>
+                        <p className="text-muted-foreground mt-1">
+                            Track your earnings from billable tasks ({dateRange.label})
+                        </p>
                     </div>
                 </div>
 
-                {/* Filter Controls */}
+                {/* Filters */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Filter Earnings</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleFilter} className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-end">
+                        <form onSubmit={handleFilter} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-end">
                             <div className="grid gap-2">
                                 <Label htmlFor="filter">Time Period</Label>
                                 <select
@@ -189,22 +175,24 @@ export default function Index({
                                     <option value="custom">Custom Range</option>
                                 </select>
                             </div>
+
                             <div className="grid gap-2">
-                                <Label htmlFor="contract">Contract</Label>
+                                <Label htmlFor="contract">Project</Label>
                                 <select
                                     id="contract"
                                     value={contractId}
                                     onChange={(e) => setContractId(e.target.value)}
                                     className="border rounded-md p-2"
                                 >
-                                    <option value="">All Contracts</option>
+                                    <option value="">All Projects</option>
                                     {contracts.map((contract) => (
                                         <option key={contract.id} value={contract.id}>
-                                            {contract.work.title} - {contract.work.user.name}
+                                            {contract.work.title}
                                         </option>
                                     ))}
                                 </select>
                             </div>
+
                             {dateFilter === 'custom' && (
                                 <>
                                     <div className="grid gap-2">
@@ -313,21 +301,19 @@ export default function Index({
                                         <TableHead>Contract Type</TableHead>
                                         <TableHead className="text-right">Hours</TableHead>
                                         <TableHead className="text-right">Tasks</TableHead>
-                                        <TableHead className="text-right">My Rate</TableHead>
+                                        <TableHead className="text-right">Rate</TableHead>
                                         <TableHead className="text-right">Earnings</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {contractEarnings.map((item) => (
                                         <TableRow key={item.contract.id}>
-                                            <TableCell className="font-medium">
-                                                {item.contract.work.title}
-                                            </TableCell>
-                                            <TableCell>{item.contract.work.user.name}</TableCell>
+                                            <TableCell className="font-medium">{item.project_title}</TableCell>
+                                            <TableCell>{item.client_name}</TableCell>
                                             <TableCell className="capitalize">{item.contract_type}</TableCell>
                                             <TableCell className="text-right">
                                                 {item.contract_type === 'monthly' ? (
-                                                    <span className="text-blue-600">
+                                                    <span className="text-xs text-blue-600">
                                                         Fixed: {item.total_hours.toFixed(2)}h logged
                                                     </span>
                                                 ) : (
