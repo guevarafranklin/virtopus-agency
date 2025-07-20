@@ -12,10 +12,11 @@ use App\Http\Controllers\Client\TimesheetController;
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 // Redirect root to login for unauthenticated users, dashboard for authenticated
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
