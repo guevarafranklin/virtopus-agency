@@ -27,6 +27,17 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
+    ->withSchedule(function ($schedule) {
+        // Generate invoices every Sunday at 5:15 PM (after billing period ends at 5:00 PM)
+        $schedule->command('invoices:generate-weekly')
+            ->weeklyOn(0, '17:15') // Sunday at 5:15 PM
+            ->timezone('America/New_York'); // Set your timezone
+
+        // Send invoices 30 minutes after generation to allow for review
+        $schedule->command('invoices:send-pending')
+            ->weeklyOn(0, '17:45') // Sunday at 5:45 PM
+            ->timezone('America/New_York');
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })

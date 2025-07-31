@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Freelancer\EarningsController;
 use App\Http\Controllers\Client\TimesheetController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\StripeWebhookController;
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -40,6 +42,13 @@ Route::middleware('auth')->group(function () {
         // Payroll management
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
         Route::get('/payroll/{contract}', [PayrollController::class, 'show'])->name('payroll.show');
+        
+        // Invoice management
+        Route::resource('invoice', InvoiceController::class)->only(['index', 'show']);
+        Route::post('/invoice/generate', [InvoiceController::class, 'generate'])->name('invoice.generate');
+        Route::post('/invoice/send-pending', [InvoiceController::class, 'sendPending'])->name('invoice.sendPending');
+        Route::post('/invoice/{invoice}/send', [InvoiceController::class, 'send'])->name('invoice.send');
+        Route::get('/billing-period', [InvoiceController::class, 'billingPeriod'])->name('invoice.billingPeriod');
     });
 
     // Client routes (admin and client can access)
@@ -66,6 +75,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings.index');
     });
 });
+
+// Stripe webhook (outside auth middleware)
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

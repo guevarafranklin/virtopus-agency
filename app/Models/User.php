@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Stripe\Stripe;
+use Stripe\Customer;
 
 class User extends Authenticatable
 {
@@ -22,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'stripe_customer_id', // Add this
     ];
 
     /**
@@ -69,5 +72,35 @@ class User extends Authenticatable
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Get or create Stripe customer
+     */
+    public function getStripeCustomer()
+    {
+        Stripe::setApiKey(config('services.stripe.secret'));
+        
+        if ($this->stripe_customer_id) {
+            try {
+                return Customer::retrieve($this->stripe_customer_id);
+            } catch (\Exception $e) {
+                // Customer might have been deleted, create a new one
+            }
+        }
+
+        // Create new Stripe customer
+        $customer = Customer::create([
+            'email' => $this->email,
+            'name' => $this->name,
+            'metadata' => [
+                'user_id' => $this->id,
+                'role' => $this->role,
+            ],
+        ]);
+
+        $this->update(['stripe_customer_id' => $customer->id]);
+
+        return $customer;
     }
 }
