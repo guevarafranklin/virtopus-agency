@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Mail;
 
 use App\Models\Invoice;
@@ -7,10 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
 
-class InvoiceSentNotification extends Mailable
+class InvoiceAdminCopy extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -27,14 +25,9 @@ class InvoiceSentNotification extends Mailable
      */
     public function envelope(): Envelope
     {
-        $bccAddresses = collect(config('mail.invoice_bcc.addresses', []))
-            ->map(fn($email) => new Address($email))
-            ->toArray();
-
         return new Envelope(
-            subject: "Invoice {$this->invoice->invoice_number} - Payment Required",
+            subject: "[ADMIN COPY] Invoice {$this->invoice->invoice_number} - {$this->invoice->client->name}",
             from: config('mail.from.address', 'no-reply@virtopusagency.com'),
-            bcc: $bccAddresses,
         );
     }
 
@@ -44,8 +37,7 @@ class InvoiceSentNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.invoice-sent',
-            text: 'emails.invoice-sent-text',
+            view: 'emails.invoice-admin-copy',
             with: [
                 'invoice' => $this->invoice,
                 'stripePaymentUrl' => $this->stripePaymentUrl,

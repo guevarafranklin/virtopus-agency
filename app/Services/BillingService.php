@@ -14,6 +14,7 @@ use Stripe\InvoiceItem as StripeInvoiceItem;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\InvoiceSentNotification;
+use App\Mail\InvoiceAdminCopy;
 
 class BillingService
 {
@@ -364,7 +365,7 @@ class BillingService
     }
 
     /**
-     * Send invoice with email notification
+     * Send invoice with email notification and admin copy
      */
     public function sendInvoiceWithNotification(Invoice $invoice): bool
     {
@@ -383,22 +384,26 @@ class BillingService
             return true; // Stripe sending was successful, just no email
         }
 
-        // Send email notification
+        // Send email notification to client
         try {
             Mail::to($invoice->client->email)->send(
                 new InvoiceSentNotification($invoice, $paymentUrl)
             );
             
-            Log::info("Invoice notification email sent", [
+            Log::info("Invoice notification email sent to client", [
                 'invoice_number' => $invoice->invoice_number,
                 'client_email' => $invoice->client->email,
                 'payment_url' => $paymentUrl
             ]);
 
+            // Send admin copy
+            $this->sendAdminCopy($invoice, $paymentUrl);
+
             // Update invoice to mark email sent
             $invoice->update([
                 'metadata' => array_merge($invoice->metadata ?? [], [
                     'notification_email_sent' => true,
+                    'admin_copy_sent' => true,
                     'notification_sent_at' => Carbon::now()->toISOString()
                 ])
             ]);
@@ -412,8 +417,46 @@ class BillingService
                 'error' => $e->getMessage()
             ]);
             
+            // Still try to send admin copy even if client email failed
+            $this->sendAdminCopy($invoice, $paymentUrl);
+            
             // Stripe was successful, but email failed - still return true
             return true;
+        }
+    }
+
+    /**
+     * Send admin copy of invoice
+     */
+    private function sendAdminCopy(Invoice $invoice, string $paymentUrl): void
+    {
+        $adminEmails = config('mail.invoice_bcc.addresses', []);
+        
+        if (empty($adminEmails)) {
+            Log::info("No admin emails configured for invoice copies");
+            return;
+        }
+
+        try {
+            foreach ($adminEmails as $adminEmail) {
+                Mail::to($adminEmail)->send(
+                    new InvoiceAdminCopy($invoice, $paymentUrl)
+                );
+            }
+            
+            Log::info("Invoice admin copies sent", [
+                'invoice_number' => $invoice->invoice_number,
+                'admin_emails' => $adminEmails,
+                'client' => $invoice->client->name,
+                'amount' => $invoice->total
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to send invoice admin copy", [
+                'invoice_number' => $invoice->invoice_number,
+                'admin_emails' => $adminEmails,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

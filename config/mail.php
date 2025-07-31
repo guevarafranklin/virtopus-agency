@@ -83,6 +83,12 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Virtopus Agency'),
     ],
 
+    'invoice_bcc' => [
+        'addresses' => env('INVOICE_BCC_EMAIL') ? 
+            array_map('trim', explode(',', env('INVOICE_BCC_EMAIL'))) : 
+            [],
+    ],
+
     'markdown' => [
         'theme' => 'default',
         'paths' => [

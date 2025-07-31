@@ -34,6 +34,11 @@ const adminNavItems: NavItem[] = [
         href: '/admin/payroll',
         icon: Briefcase,
     },
+    {
+        title: 'Invoices',
+        href: '/admin/invoice',
+        icon: DollarSign,
+    },
 ];
 
 const clientNavItems: NavItem[] = [
