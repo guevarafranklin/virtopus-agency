@@ -7,7 +7,7 @@ export default function AppLogoIcon({
 }: ImgHTMLAttributes<HTMLImageElement>) {
     return (
         <img
-            src="../../images/logo.png"
+            src="/assets/v-logo.png"
             alt="Virtopus Agency"
             className={className}
             {...props}

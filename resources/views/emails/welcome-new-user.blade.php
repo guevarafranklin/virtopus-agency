@@ -196,6 +196,7 @@
 <body>
     <div class="email-container">
         <div class="header">
+            <img src="{{ $message->embed(public_path('assets/v-logo.png')) }}" alt="Virtopus Agency" style="max-width: 180px; height: auto; margin-bottom: 15px; filter: brightness(0) invert(1);">
             <h1>Welcome to {{ $companyName }}!</h1>
             <p>Your journey starts here</p>
         </div>

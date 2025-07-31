@@ -1,4 +1,9 @@
+
 Invoice {{ $invoice->invoice_number }} - Payment Required
+
+========================================
+VIRTOPUS AGENCY
+========================================
 
 Hello {{ $invoice->client->name }},
 
@@ -19,13 +24,14 @@ Total Amount: ${{ number_format($invoice->total, 2) }}
 
 @endforeach
 
-💳 PAY YOUR INVOICE
+💳 PAY NOW WITH STRIPE
 {{ $stripePaymentUrl }}
 
-💡 PAYMENT INFORMATION
+🔒 SECURE PAYMENT INFORMATION
 - Payment is due within 30 days of invoice date
-- You can pay securely online using the link above
-- We accept all major credit cards and bank transfers
+- Click the link above to pay securely via Stripe
+- We accept all major credit cards and bank transfers  
+- All payments are processed through bank-level encryption
 - If you have any questions, please contact our support team
 
 Thank you for choosing {{ $companyName }}! We appreciate your business and look forward to continuing our partnership.
@@ -37,3 +43,4 @@ Need help? Contact us at {{ $supportEmail }}
 © {{ date('Y') }} {{ $companyName }}. All rights reserved.
 
 This email was sent to {{ $invoice->client->email }}.
+View invoice online: {{ $stripePaymentUrl }}
