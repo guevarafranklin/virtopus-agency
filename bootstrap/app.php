@@ -26,6 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+        'stripe/*',
+    ]);
+
     })
     ->withSchedule(function ($schedule) {
         // Generate invoices every Sunday at 5:15 PM (after billing period ends at 5:00 PM)
