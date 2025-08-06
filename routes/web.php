@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
+
+// Stripe webhook (outside auth middleware)
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');
+
 // Redirect root to login for unauthenticated users, dashboard for authenticated
 Route::get('/', function () {
     if (Auth::check()) {
@@ -76,9 +81,7 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Stripe webhook (outside auth middleware)
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
-    ->name('stripe.webhook');
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
