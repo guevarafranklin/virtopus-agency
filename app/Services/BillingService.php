@@ -373,37 +373,78 @@ class BillingService
         $stripeSuccess = $this->sendInvoiceViaStripe($invoice);
         
         if (!$stripeSuccess) {
+            Log::error("Failed to send invoice via Stripe", [
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number
+            ]);
             return false;
         }
 
+        // Refresh invoice to get updated metadata
+        $invoice = $invoice->fresh();
+        
         // Get the payment URL from invoice metadata
-        $paymentUrl = $invoice->fresh()->metadata['stripe_hosted_url'] ?? null;
+        $paymentUrl = $invoice->metadata['stripe_hosted_url'] ?? null;
         
         if (!$paymentUrl) {
-            Log::warning("No payment URL found for invoice {$invoice->invoice_number}");
-            return true; // Stripe sending was successful, just no email
+            Log::warning("No payment URL found for invoice {$invoice->invoice_number}", [
+                'metadata' => $invoice->metadata
+            ]);
+            
+            // Try to get URL from Stripe directly
+            try {
+                if ($invoice->stripe_invoice_id) {
+                    $stripeInvoice = \Stripe\Invoice::retrieve($invoice->stripe_invoice_id);
+                    $paymentUrl = $stripeInvoice->hosted_invoice_url;
+                    
+                    if ($paymentUrl) {
+                        // Update our invoice with the URL
+                        $invoice->update([
+                            'metadata' => array_merge($invoice->metadata ?? [], [
+                                'stripe_hosted_url' => $paymentUrl
+                            ])
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to retrieve Stripe invoice URL", [
+                    'error' => $e->getMessage(),
+                    'stripe_invoice_id' => $invoice->stripe_invoice_id
+                ]);
+            }
+        }
+
+        // If still no payment URL, use a fallback
+        if (!$paymentUrl) {
+            $paymentUrl = route('client.invoice.show', $invoice->id); // Fallback to your own invoice page
+            Log::warning("Using fallback payment URL for invoice {$invoice->invoice_number}");
         }
 
         // Send email notification to client
         try {
-            Mail::to($invoice->client->email)->send(
-                new InvoiceSentNotification($invoice, $paymentUrl)
-            );
-            
-            Log::info("Invoice notification email sent to client", [
+            Log::info("Attempting to send invoice email", [
                 'invoice_number' => $invoice->invoice_number,
                 'client_email' => $invoice->client->email,
                 'payment_url' => $paymentUrl
             ]);
 
-            // Send admin copy
+            Mail::to($invoice->client->email)->send(
+                new InvoiceSentNotification($invoice, $paymentUrl)
+            );
+            
+            Log::info("Invoice notification email sent successfully", [
+                'invoice_number' => $invoice->invoice_number,
+                'client_email' => $invoice->client->email,
+                'payment_url' => $paymentUrl
+            ]);
+
+            // Send admin copy if configured
             $this->sendAdminCopy($invoice, $paymentUrl);
 
             // Update invoice to mark email sent
             $invoice->update([
                 'metadata' => array_merge($invoice->metadata ?? [], [
                     'notification_email_sent' => true,
-                    'admin_copy_sent' => true,
                     'notification_sent_at' => Carbon::now()->toISOString()
                 ])
             ]);
@@ -414,13 +455,20 @@ class BillingService
             Log::error("Failed to send invoice notification email", [
                 'invoice_number' => $invoice->invoice_number,
                 'client_email' => $invoice->client->email,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString()
             ]);
             
             // Still try to send admin copy even if client email failed
-            $this->sendAdminCopy($invoice, $paymentUrl);
+            try {
+                $this->sendAdminCopy($invoice, $paymentUrl);
+            } catch (\Exception $adminError) {
+                Log::error("Failed to send admin copy after client email failure", [
+                    'error' => $adminError->getMessage()
+                ]);
+            }
             
-            // Stripe was successful, but email failed - still return true
+            // Stripe was successful, but email failed - still return true for Stripe success
             return true;
         }
     }
@@ -438,9 +486,11 @@ class BillingService
         }
 
         try {
+            // Create admin copy email here if you have InvoiceAdminCopy mailable
+            // Otherwise, just send regular invoice to admin emails
             foreach ($adminEmails as $adminEmail) {
                 Mail::to($adminEmail)->send(
-                    new InvoiceAdminCopy($invoice, $paymentUrl)
+                    new InvoiceSentNotification($invoice, $paymentUrl)
                 );
             }
             

@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceSentNotification extends Mailable
 {
@@ -20,16 +21,32 @@ class InvoiceSentNotification extends Mailable
     public function __construct(
         public Invoice $invoice,
         public string $stripePaymentUrl
-    ) {}
+    ) {
+        // Load relationships to avoid lazy loading issues in email templates
+        $this->invoice->load(['client', 'invoiceItems']);
+        
+        Log::info("InvoiceSentNotification created", [
+            'invoice_number' => $this->invoice->invoice_number,
+            'client_email' => $this->invoice->client->email,
+            'payment_url' => $this->stripePaymentUrl
+        ]);
+    }
 
     /**
      * Get the message envelope.
      */
     public function envelope(): Envelope
     {
-        $bccAddresses = collect(config('mail.invoice_bcc.addresses', []))
-            ->map(fn($email) => new Address($email))
-            ->toArray();
+        $bccAddresses = [];
+        
+        // Add BCC addresses if configured
+        $bccEmails = config('mail.invoice_bcc.addresses', []);
+        if (!empty($bccEmails)) {
+            $bccAddresses = collect($bccEmails)
+                ->filter()
+                ->map(fn($email) => new Address(trim($email)))
+                ->toArray();
+        }
 
         return new Envelope(
             subject: "Invoice {$this->invoice->invoice_number} - Payment Required",
