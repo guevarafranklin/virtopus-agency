@@ -35,8 +35,8 @@ interface Invoice {
     client: Client;
     billing_period_start: string;
     billing_period_end: string;
-    subtotal: number;
-    total: number;
+    subtotal: number | string;
+    total: number | string;
     status: 'draft' | 'sent' | 'paid' | 'overdue' | 'void';
     sent_at: string | null;
     paid_at: string | null;
@@ -358,7 +358,7 @@ export default function Index({ invoices, clients, filters }: Props) {
                                                     {formatDateUS(invoice.billing_period_start)} - {formatDateUS(invoice.billing_period_end)}
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">
-                                                    ${invoice.total.toFixed(2)}
+                                                    ${Number(invoice.total).toFixed(2)}
                                                 </TableCell>
                                                 <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                                                 <TableCell>{formatDateUS(invoice.due_date)}</TableCell>
