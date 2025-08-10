@@ -15,6 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create admin user first
+        $this->call([
+            AdminUserSeeder::class,
+        ]);
+
         User::factory(2)->create();
         
 
