@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('contracts', function (Blueprint $table) {
-            $table->id();
-            $table->decimal('agency_rate', 5, 2); // Percentage rate (e.g., 15.50 for 15.5%)
-            $table->foreignId('work_id')->constrained('works')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('contracts')) {
+            Schema::create('contracts', function (Blueprint $table) {
+                $table->id();
+                $table->decimal('agency_rate', 5, 2); // Percentage rate (e.g., 15.50 for 15.5%)
+                $table->foreignId('work_id')->constrained('works')->onDelete('cascade');
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

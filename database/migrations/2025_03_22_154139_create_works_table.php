@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('works', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('title');
-            $table->text('description');
-            $table->decimal('budget', 8, 2)->default(0);
-            $table->string('duration')->nullable();
-            $table->json('skills')->nullable();
-            $table->string('status')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('works')) {
+            Schema::create('works', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained()->onDelete('cascade');
+                $table->string('title');
+                $table->text('description');
+                $table->decimal('budget', 8, 2)->default(0);
+                $table->string('duration')->nullable();
+                $table->json('skills')->nullable();
+                $table->string('status')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
