@@ -37,6 +37,15 @@ export default function Index({ works, isAdmin = false }: Props) {
         }
     };
 
+    // Truncate description to first 10 words
+    const truncateDescription = (description: string) => {
+        const words = description.trim().split(/\s+/);
+        if (words.length <= 10) {
+            return description;
+        }
+        return words.slice(0, 10).join(' ') + '...';
+    };
+
     // Toggle row expansion
     const toggleRow = (workId: number) => {
         const newExpandedRows = new Set(expandedRows);
@@ -145,7 +154,7 @@ export default function Index({ works, isAdmin = false }: Props) {
                                                     <h4 className="font-semibold text-gray-900 border-b pb-2">Job Details</h4>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Description</label>
-                                                        <p className="text-sm text-gray-800 mt-1">{work.description}</p>
+                                                        <p className="text-sm text-gray-800 mt-1">{truncateDescription(work.description)}</p>
                                                     </div>
                                                     <div>
                                                         <label className="text-sm font-medium text-gray-600">Job Start Date</label>

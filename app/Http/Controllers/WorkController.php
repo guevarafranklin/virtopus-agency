@@ -5,10 +5,35 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreWorkRequest;
 use App\Http\Requests\UpdateWorkRequest;
 use App\Models\Work;
+use Carbon\Carbon;
 use Inertia\Inertia;
 
 class WorkController extends Controller
 {
+    /**
+     * Get the minimum allowed start date (next business day)
+     */
+    private function getMinWorkStartDate(): Carbon
+    {
+        $today = Carbon::today();
+        $nextBusinessDay = $today->copy();
+
+        $dayOfWeek = $today->dayOfWeek;
+
+        // Calculate days to add based on current day
+        // Carbon: 0 = Sunday, 5 = Friday, 6 = Saturday
+        if ($dayOfWeek === Carbon::FRIDAY) {
+            $nextBusinessDay->addDays(3); // Skip to Monday
+        } elseif ($dayOfWeek === Carbon::SATURDAY) {
+            $nextBusinessDay->addDays(2); // Skip to Monday
+        } elseif ($dayOfWeek === Carbon::SUNDAY) {
+            $nextBusinessDay->addDays(1); // Skip to Monday
+        } else {
+            $nextBusinessDay->addDay(); // Next day
+        }
+
+        return $nextBusinessDay;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -47,12 +72,14 @@ class WorkController extends Controller
      */
     public function store(StoreWorkRequest $request)
     {
+        $minDate = $this->getMinWorkStartDate()->subDay()->format('Y-m-d');
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'contract_type' => 'required|in:hourly,monthly',
             'rate' => 'required|numeric|min:0',
-            'job_start_date' => 'required|date|after:' . now()->addDays(14),
+            'job_start_date' => 'required|date|after:' . $minDate,
             'duration' => 'required|in:short-term,long-term,indefinite',
             'skills' => 'required|string',
             'status' => 'required|in:active,paused,terminate',
@@ -61,7 +88,7 @@ class WorkController extends Controller
 
         // Convert skills string to JSON array
         $validated['skills'] = json_encode(array_map('trim', explode(',', $validated['skills'])));
-        
+
         // Associate work with authenticated user
         Work::create($validated + ['user_id' => auth()->id()]);
 
@@ -100,17 +127,19 @@ class WorkController extends Controller
     public function update(UpdateWorkRequest $request, Work $work)
     {
         $user = auth()->user();
-        
+
         if ($user->role !== 'admin' && $work->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
+
+        $minDate = $this->getMinWorkStartDate()->subDay()->format('Y-m-d');
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'contract_type' => 'required|in:hourly,monthly',
             'rate' => 'required|numeric|min:0',
-            'job_start_date' => 'required|date|after:' . now()->addDays(14),
+            'job_start_date' => 'required|date|after:' . $minDate,
             'duration' => 'required|in:short-term,long-term,indefinite',
             'skills' => 'required|string',
             'status' => 'required|in:active,paused,terminate',

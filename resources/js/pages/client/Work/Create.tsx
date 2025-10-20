@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getMinDateForWork } from '@/lib/date-utils';
+import { getMinDateForWork, getDefaultWorkStartDate } from '@/lib/date-utils';
 
 type CreateWorkForm = {
     title: string;
@@ -25,7 +25,7 @@ export default function Create() {
         description: '',
         contract_type: 'hourly',
         rate: 0,
-        job_start_date: '',
+        job_start_date: getDefaultWorkStartDate(),
         duration: 'short-term',
         skills: '',
         status: 'active',
@@ -111,7 +111,7 @@ export default function Create() {
                             required
                         />
                         <p className="text-sm text-gray-500">
-                            Job must start at least 15 days from today (US format: MM/DD/YYYY)
+                            Job must start on a business day (Monday-Friday). Default is set to the next business day.
                         </p>
                         <InputError message={errors.job_start_date} />
                     </div>

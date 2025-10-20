@@ -120,11 +120,34 @@ export const formatTimeOnly = (dateString: string | Date): string => {
     }
 };
 
-export const getMinDateForWork = (): string => {
+export const getNextBusinessDay = (): Date => {
     const today = new Date();
-    const minDate = new Date(today);
-    minDate.setDate(today.getDate() + 15); // 15 days from today
-    return minDate.toISOString().split('T')[0];
+    const nextBusinessDay = new Date(today);
+
+    // Get day of week (0 = Sunday, 6 = Saturday)
+    const dayOfWeek = today.getDay();
+
+    // Calculate days to add based on current day
+    let daysToAdd = 1; // Default: next day
+
+    if (dayOfWeek === 5) { // Friday
+        daysToAdd = 3; // Skip to Monday
+    } else if (dayOfWeek === 6) { // Saturday
+        daysToAdd = 2; // Skip to Monday
+    } else if (dayOfWeek === 0) { // Sunday
+        daysToAdd = 1; // Skip to Monday
+    }
+
+    nextBusinessDay.setDate(today.getDate() + daysToAdd);
+    return nextBusinessDay;
+};
+
+export const getMinDateForWork = (): string => {
+    return getNextBusinessDay().toISOString().split('T')[0];
+};
+
+export const getDefaultWorkStartDate = (): string => {
+    return getNextBusinessDay().toISOString().split('T')[0];
 };
 
 export const toISODateTime = (dateString: string): string => {
